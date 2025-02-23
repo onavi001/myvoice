@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import { defaultResponse } from "./const";
 
 interface RoutineExercise {
   name: string;
@@ -26,7 +27,9 @@ interface RoutineState {
 }
 
 const initialState: RoutineState = {
-  routine: null,
+  routine: localStorage.getItem("routine")
+    ? JSON.parse(localStorage.getItem("routine") as string)
+    : null,
   loading: false,
   error: null,
 };
@@ -38,6 +41,7 @@ export const fetchRoutine = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
+      return defaultResponse as unknown as Routine;
       const response = await fetch("/.netlify/functions/generateRoutine", {
         method: "POST",
         headers: {
@@ -65,6 +69,7 @@ const routineSlice = createSlice({
     clearRoutine(state) {
       state.routine = null;
       state.error = null;
+      localStorage.removeItem("routine");
     },
   },
   extraReducers: (builder) => {
@@ -76,6 +81,7 @@ const routineSlice = createSlice({
       .addCase(fetchRoutine.fulfilled, (state, action: PayloadAction<Routine>) => {
         state.loading = false;
         state.routine = action.payload;
+        localStorage.setItem("routine", JSON.stringify(action.payload));
       })
       .addCase(fetchRoutine.rejected, (state, action) => {
         state.loading = false;
