@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchRoutine, clearRoutine } from "../../slices/routine/routineSlice";
 import { RootState, AppDispatch } from "../../slices/store";
+import { useNavigate } from "react-router-dom"; // Añadir useNavigate
 
-// Interfaz para los datos del formulario
 interface FormData {
   level: string;
   goal: string;
@@ -21,6 +21,7 @@ export const FormPage: React.FC = () => {
 
   const dispatch = useDispatch<AppDispatch>();
   const { routine, loading, error } = useSelector((state: RootState) => state.routine);
+  const navigate = useNavigate(); // Hook para navegación
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,7 +29,12 @@ export const FormPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(fetchRoutine(formData));
+    dispatch(fetchRoutine(formData)).then((result) => {
+      if (fetchRoutine.fulfilled.match(result)) {
+        // Navegar a RoutinePage después de generar la rutina
+        navigate("/routine");
+      }
+    });
   };
 
   const handleClear = () => {
@@ -85,31 +91,11 @@ export const FormPage: React.FC = () => {
           </div>
         )}
 
-        {/* Mostrar rutina si existe */}
-        {routine && (
+        {/* Mostrar rutina si existe (opcional, ahora redirigimos) */}
+        {routine && !loading && (
           <div className="mt-6">
             <h3 className="text-xl font-bold text-blue-900">Tu Rutina Personalizada</h3>
-            {routine.routine.map((day, index) => (
-              <div key={index} className="mt-4">
-                <h4 className="font-semibold text-lg">{day.day}</h4>
-                <ul className="mt-2 space-y-2">
-                  {day.exercises.map((exercise, exIndex) => (
-                    <li key={exIndex} className="bg-white p-2 rounded shadow">
-                      <p>
-                        <strong>{exercise.name}</strong> ({exercise.muscle_group})
-                      </p>
-                      <p>
-                        {exercise.sets} series x {exercise.reps} reps - Peso: {exercise.weight}
-                      </p>
-                      <p>Descanso: {exercise.rest}</p>
-                    </li>
-                  ))}
-                </ul>
-                {day.explanation && (
-                  <p className="mt-2 text-gray-600 italic">{day.explanation}</p>
-                )}
-              </div>
-            ))}
+            <p>Rutina generada. Redirigiendo a la página de detalles...</p>
             <button
               onClick={handleClear}
               className="mt-4 w-full bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
