@@ -1,7 +1,8 @@
-const fetch = require("node-fetch"); // Necesitarás instalarlo
-
 exports.handler = async (event) => {
   try {
+    // Importación dinámica de node-fetch
+    const { default: fetch } = await import("node-fetch");
+
     const body = JSON.parse(event.body);
     const { level, goal, days, equipment } = body;
 
