@@ -1,8 +1,8 @@
-exports.handler = async (event) => {
-  try {
-    // Importación dinámica de node-fetch
-    const { default: fetch } = await import("node-fetch");
+// generateRoutine.cjs
+const fetch = require("node-fetch");
 
+module.exports.handler = async (event) => {
+  try {
     const body = JSON.parse(event.body);
     const { level, goal, days, equipment } = body;
 
@@ -68,6 +68,7 @@ exports.handler = async (event) => {
       body: routine,
     };
   } catch (error) {
+    console.error(error)
     return {
       statusCode: 500,
       body: JSON.stringify({ error: error.message }),
