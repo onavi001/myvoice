@@ -1,5 +1,3 @@
-import { Routine } from "../exercise/exerciseTypes";
-
 export const defaultResponse = {
   "routine": [
     {
