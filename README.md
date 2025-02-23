@@ -145,6 +145,6 @@ Este proyecto está bajo la [Licencia MIT](LICENSE).
 
 ## Autor
 
-- **Oscar Navia** - [GitHub](https://github.com/onavi001)
+- **Oscar Ivan Perez Ibarra** - [GitHub](https://github.com/onavi001)
 
 ---
