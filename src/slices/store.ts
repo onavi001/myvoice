@@ -3,6 +3,7 @@ import userReducer from './user/userSlice';
 import exerciseReducer from './exercise/exerciseSlice';
 import statisticsReducer from './statistics/statisticsSlice';
 import routineReducer from './routine/routineSlice';
+import progressSlice from './progress/progressSlice';
 
 const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ const store = configureStore({
     exercise: exerciseReducer,
     statistics: statisticsReducer,
     routine: routineReducer,
+    progress :progressSlice,
   },
 });
 

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchRoutine, clearRoutine } from "../../slices/routine/routineSlice";
 import { RootState, AppDispatch } from "../../slices/store";
-import { useNavigate } from "react-router-dom"; // Añadir useNavigate
+import { useNavigate } from "react-router-dom";
 
 interface FormData {
   level: string;
@@ -21,7 +21,7 @@ export const FormPage: React.FC = () => {
 
   const dispatch = useDispatch<AppDispatch>();
   const { routine, loading, error } = useSelector((state: RootState) => state.routine);
-  const navigate = useNavigate(); // Hook para navegación
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -31,7 +31,6 @@ export const FormPage: React.FC = () => {
     e.preventDefault();
     dispatch(fetchRoutine(formData)).then((result) => {
       if (fetchRoutine.fulfilled.match(result)) {
-        // Navegar a RoutinePage después de generar la rutina
         navigate("/routine");
       }
     });
@@ -84,14 +83,12 @@ export const FormPage: React.FC = () => {
           </button>
         </form>
 
-        {/* Mostrar error si ocurre */}
         {error && (
           <div className="mt-4 p-2 bg-red-100 text-red-700 rounded">
             {error}
           </div>
         )}
 
-        {/* Mostrar rutina si existe (opcional, ahora redirigimos) */}
         {routine && !loading && (
           <div className="mt-6">
             <h3 className="text-xl font-bold text-blue-900">Tu Rutina Personalizada</h3>
