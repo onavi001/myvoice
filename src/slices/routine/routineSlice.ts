@@ -1,13 +1,14 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { defaultResponse } from "./const";
 
-interface RoutineExercise {
+export interface RoutineExercise {
   name: string;
   muscle_group: string;
   sets: number;
   reps: number;
   weight: string;
   rest: string;
+  notes?: string;
 }
 
 interface RoutineDay {
@@ -33,7 +34,6 @@ const initialState: RoutineState = {
   loading: false,
   error: null,
 };
-
 export const fetchRoutine = createAsyncThunk(
   "routine/fetchRoutine",
   async (
@@ -61,7 +61,12 @@ export const fetchRoutine = createAsyncThunk(
     }
   }
 );
-
+// Acción para actualizar un ejercicio
+interface UpdateExercisePayload {
+  dayIndex: number;
+  exerciseIndex: number;
+  updatedExercise: Partial<RoutineExercise>;
+}
 const routineSlice = createSlice({
   name: "routine",
   initialState,
@@ -70,6 +75,18 @@ const routineSlice = createSlice({
       state.routine = null;
       state.error = null;
       localStorage.removeItem("routine");
+    },
+    updateExercise(state, action: PayloadAction<UpdateExercisePayload>) {
+      if (state.routine) {
+        const { dayIndex, exerciseIndex, updatedExercise } = action.payload;
+        const exercise = state.routine.routine[dayIndex].exercises[exerciseIndex];
+        state.routine.routine[dayIndex].exercises[exerciseIndex] = {
+          ...exercise,
+          ...updatedExercise,
+        };
+        // Actualizar Local Storage
+        localStorage.setItem("routine", JSON.stringify(state.routine));
+      }
     },
   },
   extraReducers: (builder) => {
@@ -90,5 +107,5 @@ const routineSlice = createSlice({
   },
 });
 
-export const { clearRoutine } = routineSlice.actions;
+export const { clearRoutine, updateExercise } = routineSlice.actions;
 export default routineSlice.reducer;
