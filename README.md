@@ -1,17 +1,17 @@
-
 # MyVoice - Workout Routine Generator
 
-![React](https://img.shields.io/badge/React-18.2.0-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue) ![Redux](https://img.shields.io/badge/Redux_Toolkit-1.9-purple) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-teal) ![Groq API](https://img.shields.io/badge/Groq_API-Free-green) ![Netlify](https://img.shields.io/badge/Netlify_Functions-Free-orange)
+![React](https://img.shields.io/badge/React-18.2.0-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue) ![Redux](https://img.shields.io/badge/Redux_Toolkit-1.9-purple) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-teal) ![Groq API](https://img.shields.io/badge/Groq_API-Free-green) ![YouTube API](https://img.shields.io/badge/YouTube_API-Free-red) ![Netlify](https://img.shields.io/badge/Netlify_Functions-Free-orange)
 
-**MyVoice** es una aplicación web construida con React, TypeScript, Redux Toolkit y Tailwind CSS, diseñada para generar rutinas de gimnasio personalizadas utilizando la inteligencia artificial de la Groq API. Originalmente enfocada en funcionalidades relacionadas con canciones y autenticación, la aplicación ha evolucionado para incluir un generador de rutinas que adapta los entrenamientos a tus objetivos, nivel de condición física, días disponibles y equipo, con un backend seguro implementado mediante Netlify Functions.
+**MyVoice** es una aplicación web construida con React, TypeScript, Redux Toolkit y Tailwind CSS, diseñada para generar rutinas de gimnasio personalizadas utilizando la inteligencia artificial de la Groq API. Incluye videos educativos de YouTube cargados dinámicamente para cada ejercicio, optimizados para evitar solicitudes repetidas mediante almacenamiento local.
 
 ## Características
 
-- **Generación de rutinas personalizadas:** Ingresa tu nivel (principiante, intermedio, avanzado), objetivo (fuerza, hipertrofia, resistencia), días de entrenamiento y equipo disponible para obtener una rutina detallada en formato JSON.
-- **Interfaz intuitiva:** Formulario simple y visualización clara de las rutinas con ejercicios, series, repeticiones, pesos, descansos y explicaciones.
-- **Estado global con Redux:** Manejo eficiente del estado usando Redux Toolkit para gestionar las rutinas y otras funcionalidades.
-- **Diseño responsivo:** Estilizado con Tailwind CSS para una experiencia fluida en dispositivos móviles y de escritorio.
-- **Backend seguro:** Las solicitudes a la Groq API se manejan a través de Netlify Functions para proteger la clave API.
+- **Generación de rutinas personalizadas:** Ingresa tu nivel (principiante, intermedio, avanzado), objetivo (fuerza, hipertrofia, resistencia), días de entrenamiento y equipo para obtener una rutina detallada en formato JSON.
+- **Interfaz intuitiva:** Lista colapsable de ejercicios por día con videos de YouTube que muestran la técnica correcta y los músculos trabajados.
+- **Persistencia local:** Las rutinas y el progreso se almacenan en Local Storage, incluyendo URLs de videos para evitar múltiples solicitudes a la YouTube API.
+- **Estado global con Redux:** Manejo eficiente del estado con reducers modulares (`routine` y `progress`) para una arquitectura escalable.
+- **Diseño responsivo:** Optimizado para dispositivos móviles con Tailwind CSS.
+- **Backend seguro:** Solicitudes a la Groq API manejadas por Netlify Functions.
 - **Autenticación y canciones:** Funcionalidades heredadas para gestionar usuarios y canciones (en desarrollo).
 
 ## Tecnologías utilizadas
@@ -19,8 +19,10 @@
 - **Frontend:** React 18.2.0, TypeScript 5.0, Tailwind CSS 3.4
 - **Gestión de estado:** Redux Toolkit 1.9
 - **IA:** Groq API (nivel gratuito) con el modelo `llama3-8b-8192`
+- **Videos dinámicos:** YouTube Data API v3
 - **Backend:** Netlify Functions (nivel gratuito)
 - **Enrutamiento:** React Router DOM
+- **Bundler:** Vite
 
 ## Instalación
 
@@ -32,6 +34,7 @@ Sigue estos pasos para configurar el proyecto localmente:
 - npm (v8 o superior)
 - Netlify CLI (`npm install -g netlify-cli`)
 - Una clave API de Groq (obténla en [Groq Console](https://console.groq.com))
+- Una clave API de YouTube (obténla en [Google Cloud Console](https://console.cloud.google.com/))
 
 ### Pasos
 
@@ -45,19 +48,24 @@ Sigue estos pasos para configurar el proyecto localmente:
    ```bash
    npm install
    ```
+   Nota: Asegúrate de que `node-fetch` esté instalado en la versión 2.x para compatibilidad con Netlify Functions:
+   ```bash
+   npm install node-fetch@2
+   ```
 
-3. **Configura la clave API de Groq localmente:**
+3. **Configura las claves API localmente:**
    - Crea un archivo `.env` en la raíz del proyecto (no lo subas a GitHub):
      ```
-     GROQ_API_KEY=tu_clave_aqui
+     GROQ_API_KEY=tu_clave_groq
+     VITE_YOUTUBE_API_KEY=tu_clave_youtube
      ```
-   - Este archivo se usará para pruebas locales con Netlify Functions.
+   - Estas claves se usan para las pruebas locales con Netlify Functions y la integración de YouTube.
 
 4. **Inicia la aplicación:**
    ```bash
    netlify dev
    ```
-   La aplicación se abrirá en `http://localhost:8888`, con las funciones disponibles.
+   La aplicación se abrirá en `http://localhost:8888`, con las funciones y videos disponibles.
 
 ## Uso
 
@@ -73,20 +81,34 @@ Sigue estos pasos para configurar el proyecto localmente:
 3. **Genera la rutina:**
    - Haz clic en "Generar Rutina" para obtener una rutina personalizada generada por la Groq API a través de Netlify Functions.
 
-4. **Visualiza el resultado:**
-   - La rutina aparecerá en pantalla con días, ejercicios, series, repeticiones, pesos, tiempos de descanso y una explicación.
+4. **Visualiza y edita la rutina:**
+   - Serás redirigido a `/routine`, donde puedes seleccionar un día específico de la rutina usando el menú desplegable.
+   - Los ejercicios del día elegido aparecen como una lista colapsable. Haz clic en el nombre de un ejercicio para expandirlo y ver/editar sus detalles (series, repeticiones, peso, notas), o colapsarlo para ahorrar espacio, ideal para móviles.
+   - Al expandir un ejercicio, se muestra un video de YouTube educativo cargado dinámicamente desde la YouTube Data API la primera vez y almacenado en Local Storage para evitar solicitudes repetidas, acompañado de una descripción sobre los músculos trabajados.
+   - Haz clic en "Guardar cambios y registrar progreso" para actualizar la rutina y añadir una entrada al historial de progreso en Local Storage.
+
+5. **Registra y edita tu progreso:**
+   - Desde `/routine`, haz clic en "Ver Progreso" para ir a `/progress`.
+   - Usa el formulario para registrar nuevo progreso manualmente, o edita entradas existentes en la tabla haciendo clic en "Editar" y guardando los cambios.
+   - El historial de progreso persiste en Local Storage y puede ser limpiado con "Limpiar Historial".
+
+6. **Limpia la rutina:**
+   - Desde la página principal, haz clic en "Limpiar Rutina" para eliminar la rutina actual del estado y del Local Storage (no afecta el progreso).
 
 ## Estructura del proyecto
 
 ```
 src/
-├── components/         # Componentes reutilizables (Navbar, ExerciseCard, etc.)
-├── pages/             # Páginas de la aplicación (FormPage, RoutinePage, etc.)
+├── components/         # Componentes reutilizables (Navbar, etc.)
+├── pages/             # Páginas de la aplicación (FormPage, RoutinePage, ProgressPage, etc.)
 │   ├── FormPage/
-│   └── RoutinePage/
-├── slices/            # Slices de Redux (auth, song, ui, routine)
+│   ├── RoutinePage/
+│   └── ProgressPage/
+├── slices/            # Slices de Redux (routine, progress)
+│   ├── routineSlice.ts
+│   └── progressSlice.ts
 ├── store/             # Configuración del store de Redux
-├── functions/         # Funciones de Netlify (generateRoutine.js)
+├── functions/         # Funciones de Netlify (generateRoutine.cjs)
 └── App.tsx            # Componente principal con enrutamiento
 ```
 
@@ -106,7 +128,8 @@ Para un usuario con `level: principiante`, `goal: fuerza`, `days: 3`, `equipment
           "sets": 3,
           "reps": 12,
           "weight": "Light 5-10kg",
-          "rest": "60 seconds"
+          "rest": "60 seconds",
+          "videoUrl": "https://www.youtube.com/embed/vthMCtgQ_TY"
         },
         {
           "name": "Leg Press",
@@ -114,7 +137,8 @@ Para un usuario con `level: principiante`, `goal: fuerza`, `days: 3`, `equipment
           "sets": 3,
           "reps": 12,
           "weight": "Light 10-20kg",
-          "rest": "60 seconds"
+          "rest": "60 seconds",
+          "videoUrl": "https://www.youtube.com/embed/IZxyjW7MPJQ"
         }
       ],
       "explanation": "These exercises build foundational strength for beginners."
@@ -134,37 +158,19 @@ Este proyecto utiliza la Groq API mediante un backend seguro con Netlify Functio
 
 2. **Configura la clave en Netlify:**
    - Ve a tu sitio en [Netlify Dashboard](https://app.netlify.com).
-   - Navega a **Settings** > **Environment variables**.
+   - Navega a **Settings > Environment variables**.
    - Añade:
      ```
      Key: GROQ_API_KEY
-     Value: tu_clave_de_groq
+     Value: tu_clave_groq
      ```
-   - Esta variable estará disponible en las funciones de Netlify como `process.env.GROQ_API_KEY`.
 
 3. **Desarrollo local:**
-   - Instala Netlify CLI:
-     ```bash
-     npm install -g netlify-cli
-     ```
-   - Crea un archivo `.env` local (no lo subas a GitHub):
-     ```
-     GROQ_API_KEY=tu_clave_aqui
-     ```
-   - Ejecuta localmente con:
-     ```bash
-     netlify dev
-     ```
-   - Esto inicia el servidor en `http://localhost:8888` y hace que las funciones estén disponibles.
+   - Usa el `.env` local como se describe en la sección de instalación.
 
-4. **Llamada desde el frontend:**
-   - El archivo `routineSlice.ts` está configurado para llamar a la función Netlify (`/.netlify/functions/generateRoutine`), que maneja la interacción con la Groq API de forma segura.
+### Nota técnica
 
-### Nota de seguridad
-
-Al usar Netlify Functions, la clave API nunca se expone en el frontend, ya que las solicitudes a la Groq API se realizan desde el servidor. Esto es mucho más seguro que incrustar la clave en el build de React.
-
-Consulta la documentación de [Netlify Functions](https://docs.netlify.com/functions/overview/) y [Groq API](https://console.groq.com/docs) para más detalles.
+Netlify Functions usa CommonJS por defecto. El archivo `generateRoutine.cjs` está escrito en CommonJS para compatibilidad con `node-fetch@2`.
 
 ## Despliegue
 
@@ -173,7 +179,13 @@ Consulta la documentación de [Netlify Functions](https://docs.netlify.com/funct
 2. Configura el build:
    - Build command: `npm run build`
    - Publish directory: `build`
-   - Environment variables: Añade `GROQ_API_KEY` como se explicó.
+   - Environment variables:
+     ```
+     Key: GROQ_API_KEY
+     Value: tu_clave_groq
+     Key: VITE_YOUTUBE_API_KEY
+     Value: tu_clave_youtube
+     ```
 3. Despliega:
    - Haz clic en "Deploy site".
 
@@ -187,13 +199,6 @@ Consulta la documentación de [Netlify Functions](https://docs.netlify.com/funct
 4. Sube tu rama (`git push origin feature/nueva-funcionalidad`).
 5. Abre un Pull Request.
 
-## Próximos pasos
-
-- Integrar la rutina generada en `RoutinePage` para una vista dedicada.
-- Añadir validaciones al formulario.
-- Mejorar el diseño con estilos avanzados de Tailwind CSS.
-- Implementar persistencia con localStorage o una base de datos.
-
 ## Licencia
 
 Este proyecto está bajo la [Licencia MIT](LICENSE).
@@ -201,4 +206,5 @@ Este proyecto está bajo la [Licencia MIT](LICENSE).
 ## Autor
 
 - **Oscar Ivan Perez Ibarra** - [GitHub](https://github.com/onavi001)
+```
 

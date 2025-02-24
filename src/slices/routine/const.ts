@@ -4,28 +4,76 @@ export const defaultResponse = {
       "day": "Day 1",
       "exercises": [
         {
-          "name": "Deadlifts",
-          "muscle_group": "Legs, Back, Core",
+          "name": "Incline Barbell Press",
+          "muscle_group": "Upper Chest, Triceps, Shoulders",
+          "sets": 5,
+          "reps": "5",
+          "weight": "Heavy",
+          "rest": "90-120 seconds"
+        },
+        {
+          "name": "Flat Dumbbell Press",
+          "muscle_group": "Chest, Triceps, Shoulders",
           "sets": 4,
           "reps": "8-12",
-          "weight": "Heavy",
+          "weight": "Moderate to Heavy",
           "rest": "90 seconds"
         },
         {
-          "name": "Bench Press",
-          "muscle_group": "Chest, Shoulders, Triceps",
+          "name": "Incline Dumbbell Flyes",
+          "muscle_group": "Chest",
           "sets": 4,
-          "reps": "8-12",
-          "weight": "Heavy",
-          "rest": "90 seconds"
+          "reps": "12-15",
+          "weight": "Moderate",
+          "rest": "45-60 seconds"
         },
         {
-          "name": "Pull-ups",
-          "muscle_group": "Back, Shoulders, Arms",
+          "name": "Cable Crossovers",
+          "muscle_group": "Chest",
           "sets": 3,
-          "reps": "8-12",
+          "reps": "12-15",
+          "weight": "Moderate",
+          "rest": "45-60 seconds"
+        },
+        {
+          "name": "Barbell Curl",
+          "muscle_group": "Biceps",
+          "sets": 4,
+          "reps": "8-10",
+          "weight": "Moderate to Heavy",
+          "rest": "90 seconds"
+        },
+        {
+          "name": "Hammer Dumbbell Curl",
+          "muscle_group": "Biceps, Forearms",
+          "sets": 4,
+          "reps": "12-15",
+          "weight": "Moderate",
+          "rest": "45-60 seconds"
+        },
+        {
+          "name": "Incline Dumbbell Curl",
+          "muscle_group": "Biceps",
+          "sets": 3,
+          "reps": "12-15",
+          "weight": "Moderate",
+          "rest": "45-60 seconds"
+        },
+        {
+          "name": "Clap Push-ups",
+          "muscle_group": "Chest, Triceps, Shoulders",
+          "sets": 2,
+          "reps": "10",
           "weight": "Bodyweight",
-          "rest": "120 seconds"
+          "rest": "Minimal (superset)"
+        },
+        {
+          "name": "Rope Cable Curl",
+          "muscle_group": "Biceps",
+          "sets": 2,
+          "reps": "12",
+          "weight": "Moderate",
+          "rest": "Minimal (superset)"
         }
       ],
       "explanation": "This day focuses on building overall strength and power, with deadlifts, bench press, and pull-ups targeting multiple muscle groups."
