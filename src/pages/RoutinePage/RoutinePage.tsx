@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "../../slices/store";
-import { updateExercise } from "../../slices/routine/routineSlice";
+import { updateExercise, setExerciseVideo } from "../../slices/routine/routineSlice";
 import { addProgress } from "../../slices/progress/progressSlice";
 import { useNavigate } from "react-router-dom";
 
@@ -10,9 +10,12 @@ export const RoutinePage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0); // Día seleccionado por defecto: 0
-  const [expandedExercises, setExpandedExercises] = useState<Record<number, boolean>>({}); // Estado de expansión por ejercicio
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  const [expandedExercises, setExpandedExercises] = useState<Record<number, boolean>>({});
   const [editData, setEditData] = useState<Record<string, any>>({});
+  const [loadingVideos, setLoadingVideos] = useState<Record<number, boolean>>({});
+
+  const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 
   const handleBack = () => {
     navigate("/");
@@ -24,14 +27,42 @@ export const RoutinePage: React.FC = () => {
 
   const handleDayChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedDayIndex(Number(e.target.value));
-    setExpandedExercises({}); // Reiniciar expansión al cambiar de día
+    setExpandedExercises({});
+    setLoadingVideos({});
   };
 
-  const toggleExerciseExpand = (exerciseIndex: number) => {
+  const fetchExerciseVideo = async (exerciseName: string, dayIndex: number, exerciseIndex: number) => {
+    setLoadingVideos((prev) => ({ ...prev, [exerciseIndex]: true }));
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
+          `${exerciseName} exercise technique muscles`
+        )}&type=video&maxResults=1&key=${YOUTUBE_API_KEY}`
+      );
+      const data = await response.json();
+      if (data.items && data.items.length > 0) {
+        const videoId = data.items[0].id.videoId;
+        const url = `https://www.youtube.com/embed/${videoId}`;
+        dispatch(setExerciseVideo({ dayIndex, exerciseIndex, videoUrl: url }));
+      }
+    } catch (error) {
+      console.error("Error fetching YouTube video:", error);
+    } finally {
+      setLoadingVideos((prev) => ({ ...prev, [exerciseIndex]: false }));
+    }
+  };
+
+  const toggleExerciseExpand = (exerciseIndex: number, exerciseName: string) => {
+    const isExpanding = !expandedExercises[exerciseIndex];
     setExpandedExercises((prev) => ({
       ...prev,
-      [exerciseIndex]: !prev[exerciseIndex],
+      [exerciseIndex]: isExpanding,
     }));
+
+    const exercise = routine!.routine[selectedDayIndex].exercises[exerciseIndex];
+    if (isExpanding && !exercise.videoUrl) {
+      fetchExerciseVideo(exerciseName, selectedDayIndex, exerciseIndex);
+    }
   };
 
   const handleInputChange = (
@@ -54,10 +85,8 @@ export const RoutinePage: React.FC = () => {
     const key = `${dayIndex}-${exerciseIndex}`;
     const updatedExercise = editData[key];
     if (updatedExercise) {
-      // Actualizar la rutina
       dispatch(updateExercise({ dayIndex, exerciseIndex, updatedExercise }));
 
-      // Registrar progreso con los valores editados
       const currentExercise = routine!.routine[dayIndex].exercises[exerciseIndex];
       const progressData = {
         dayIndex,
@@ -69,7 +98,6 @@ export const RoutinePage: React.FC = () => {
       };
       dispatch(addProgress(progressData));
 
-      // Limpiar el estado local después de guardar
       setEditData((prev) => {
         const newData = { ...prev };
         delete newData[key];
@@ -100,7 +128,6 @@ export const RoutinePage: React.FC = () => {
       <div className="p-6 max-w-md mx-auto">
         <h2 className="text-2xl font-bold text-blue-900 mb-4">Tu Rutina Personalizada</h2>
 
-        {/* Selector de días */}
         <div className="mb-4">
           <label className="block text-gray-700 font-semibold mb-1">Seleccionar Día:</label>
           <select
@@ -116,7 +143,6 @@ export const RoutinePage: React.FC = () => {
           </select>
         </div>
 
-        {/* Día seleccionado con ejercicios colapsables */}
         <div className="mt-4">
           <h3 className="font-semibold text-lg text-gray-800 mb-2">
             {routine.routine[selectedDayIndex].day}
@@ -130,11 +156,12 @@ export const RoutinePage: React.FC = () => {
                 ...edited,
               };
               const isExpanded = expandedExercises[exerciseIndex] || false;
+              const isLoading = loadingVideos[exerciseIndex] || false;
 
               return (
                 <li key={exerciseIndex} className="bg-white rounded-lg shadow-md border-l-4 border-blue-500">
                   <button
-                    onClick={() => toggleExerciseExpand(exerciseIndex)}
+                    onClick={() => toggleExerciseExpand(exerciseIndex, exercise.name)}
                     className="w-full flex justify-between items-center p-4 text-left focus:outline-none"
                   >
                     <span className="text-lg font-semibold">{exercise.name}</span>
@@ -143,6 +170,25 @@ export const RoutinePage: React.FC = () => {
                   {isExpanded && (
                     <div className="p-4 pt-0 space-y-2">
                       <p className="text-gray-700">{exercise.muscle_group}</p>
+                      {currentExercise.videoUrl ? (
+                        <>
+                          <iframe
+                            src={currentExercise.videoUrl}
+                            title={`Demostración de ${exercise.name}`}
+                            className="w-full h-48 rounded"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                          <p className="text-gray-600 text-sm">
+                            Muestra la técnica correcta y los músculos trabajados.
+                          </p>
+                        </>
+                      ) : isLoading ? (
+                        <p className="text-gray-500 italic">Buscando video de demostración...</p>
+                      ) : (
+                        <p className="text-gray-500 italic">Video no disponible aún.</p>
+                      )}
                       <div>
                         <label className="text-gray-600">Series: </label>
                         <input

@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { defaultResponse } from "./const";
 
-export interface RoutineExercise {
+interface RoutineExercise {
   name: string;
   muscle_group: string;
   sets: number;
@@ -9,6 +9,7 @@ export interface RoutineExercise {
   weight: string;
   rest: string;
   notes?: string;
+  videoUrl?: string; // Nuevo campo para almacenar el URL del video
 }
 
 interface RoutineDay {
@@ -34,6 +35,7 @@ const initialState: RoutineState = {
   loading: false,
   error: null,
 };
+
 export const fetchRoutine = createAsyncThunk(
   "routine/fetchRoutine",
   async (
@@ -61,12 +63,7 @@ export const fetchRoutine = createAsyncThunk(
     }
   }
 );
-// Acción para actualizar un ejercicio
-interface UpdateExercisePayload {
-  dayIndex: number;
-  exerciseIndex: number;
-  updatedExercise: Partial<RoutineExercise>;
-}
+
 const routineSlice = createSlice({
   name: "routine",
   initialState,
@@ -76,7 +73,14 @@ const routineSlice = createSlice({
       state.error = null;
       localStorage.removeItem("routine");
     },
-    updateExercise(state, action: PayloadAction<UpdateExercisePayload>) {
+    updateExercise(
+      state,
+      action: PayloadAction<{
+        dayIndex: number;
+        exerciseIndex: number;
+        updatedExercise: Partial<RoutineExercise>;
+      }>
+    ) {
       if (state.routine) {
         const { dayIndex, exerciseIndex, updatedExercise } = action.payload;
         const exercise = state.routine.routine[dayIndex].exercises[exerciseIndex];
@@ -84,7 +88,20 @@ const routineSlice = createSlice({
           ...exercise,
           ...updatedExercise,
         };
-        // Actualizar Local Storage
+        localStorage.setItem("routine", JSON.stringify(state.routine));
+      }
+    },
+    setExerciseVideo(
+      state,
+      action: PayloadAction<{
+        dayIndex: number;
+        exerciseIndex: number;
+        videoUrl: string;
+      }>
+    ) {
+      if (state.routine) {
+        const { dayIndex, exerciseIndex, videoUrl } = action.payload;
+        state.routine.routine[dayIndex].exercises[exerciseIndex].videoUrl = videoUrl;
         localStorage.setItem("routine", JSON.stringify(state.routine));
       }
     },
@@ -107,5 +124,5 @@ const routineSlice = createSlice({
   },
 });
 
-export const { clearRoutine, updateExercise } = routineSlice.actions;
+export const { clearRoutine, updateExercise, setExerciseVideo } = routineSlice.actions;
 export default routineSlice.reducer;
