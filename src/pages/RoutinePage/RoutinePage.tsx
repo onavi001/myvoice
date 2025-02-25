@@ -114,13 +114,13 @@ export const RoutinePage: React.FC = () => {
 
   if (!routine) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-black text-white">
         <div className="p-4 max-w-md mx-auto">
-          <h2 className="text-xl font-bold text-gray-800 mb-3">Tu Rutina</h2>
-          <p className="text-gray-600 text-sm">No hay rutina generada. Genera una desde la página principal.</p>
+          <h2 className="text-xl font-sans font-semibold text-white mb-3">Tu Rutina</h2>
+          <p className="text-gray-300 text-sm">No hay rutina generada. Genera una desde la página principal.</p>
           <button
             onClick={handleBack}
-            className="mt-3 w-full bg-blue-500 text-white py-1 rounded hover:bg-blue-600 text-sm"
+            className="mt-3 w-full bg-white text-black py-1 rounded hover:bg-gray-200 transition-colors text-sm shadow-sm"
           >
             Volver
           </button>
@@ -132,18 +132,18 @@ export const RoutinePage: React.FC = () => {
   const selectedDay = routine.routine[selectedDayIndex];
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-black text-white">
       <div className="p-4 max-w-md mx-auto">
-        <h2 className="text-xl font-bold text-blue-900 mb-3">Tu Rutina</h2>
+        <h2 className="text-xl font-sans font-semibold text-white mb-3">Tu Rutina</h2>
 
         <div className="mb-3">
           <select
             value={selectedDayIndex}
             onChange={handleDayChange}
-            className="w-full p-1 border rounded bg-white text-sm"
+            className="w-full p-1 border border-gray-700 rounded bg-black text-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-500"
           >
             {routine.routine.map((day, index) => (
-              <option key={index} value={index}>
+              <option key={index} value={index} className="bg-black text-white">
                 {day.day}
               </option>
             ))}
@@ -153,17 +153,17 @@ export const RoutinePage: React.FC = () => {
         <div>
           <button
             onClick={toggleDayDetails}
-            className="w-full flex justify-between items-center bg-blue-500 text-white p-2 rounded hover:bg-blue-600 text-sm mb-2"
+            className="w-full flex justify-between items-center bg-gray-900 text-white p-2 rounded hover:bg-gray-800 transition-colors text-sm shadow-sm"
           >
-            <span>{selectedDay.day}</span>
+            <span className="font-sans">{selectedDay.day}</span>
             <span>{showDayDetails ? "▲" : "▼"}</span>
           </button>
           {showDayDetails && (
-            <div className="mb-3 text-sm">
-              <p className="text-gray-700 font-semibold">Músculos:</p>
-              <p className="text-gray-600">{selectedDay.musclesWorked.join(", ")}</p>
-              <p className="text-gray-700 font-semibold mt-1">Calentamiento:</p>
-              <ul className="list-disc pl-4 text-gray-600">
+            <div className="mb-3 text-sm bg-gray-900 p-2 rounded mt-1 shadow-sm">
+              <p className="text-gray-200 font-semibold">Músculos:</p>
+              <p className="text-gray-300">{selectedDay.musclesWorked.join(", ")}</p>
+              <p className="text-gray-200 font-semibold mt-1">Calentamiento:</p>
+              <ul className="list-disc pl-4 text-gray-300">
                 {selectedDay.warmUpOptions.map((option, index) => (
                   <li key={index} className="truncate">{option}</li>
                 ))}
@@ -179,22 +179,27 @@ export const RoutinePage: React.FC = () => {
               const isLoading = loadingVideos[exerciseIndex] || false;
 
               return (
-                <li key={exerciseIndex} className="bg-white rounded-lg shadow-md border-l-4 border-blue-500">
+                <li
+                  key={exerciseIndex}
+                  className="bg-gray-900 rounded-lg shadow-sm border-l-4 border-gray-700"
+                >
                   <button
                     onClick={() => toggleExerciseExpand(exerciseIndex, exercise.name)}
-                    className="w-full flex justify-between items-center p-2 text-left focus:outline-none"
+                    className="w-full flex justify-between items-center p-2 text-left focus:outline-none hover:bg-gray-800 transition-colors"
                   >
-                    <span className="text-base font-semibold truncate">{exercise.name}</span>
-                    <span>{isExpanded ? "▲" : "▼"}</span>
+                    <span className="text-base font-sans font-semibold truncate text-white">
+                      {exercise.name}
+                    </span>
+                    <span className="text-gray-300">{isExpanded ? "▲" : "▼"}</span>
                   </button>
                   {isExpanded && (
-                    <div className="p-2 space-y-1 text-sm">
-                      <p className="text-gray-700 truncate">{exercise.muscle_group}</p>
+                    <div className="p-2 space-y-1 text-sm bg-gray-800 rounded-b-lg">
+                      <p className="text-gray-200 truncate">{exercise.muscle_group}</p>
                       {currentExercise.tips && currentExercise.tips.length > 0 && (
                         <div>
-                          <p className="text-gray-600 font-semibold">Consejos:</p>
-                          <ul className="list-disc pl-4 text-gray-600">
-                            {currentExercise.tips.map((tip:string, index: React.Key) => (
+                          <p className="text-gray-200 font-semibold">Consejos:</p>
+                          <ul className="list-disc pl-4 text-gray-300">
+                            {currentExercise.tips.map((tip:string, index:number) => (
                               <li key={index} className="truncate">{tip}</li>
                             ))}
                           </ul>
@@ -204,62 +209,62 @@ export const RoutinePage: React.FC = () => {
                         <iframe
                           src={currentExercise.videoUrl}
                           title={`Demostración de ${exercise.name}`}
-                          className="w-full h-32 rounded"
+                          className="w-full h-32 rounded border border-gray-700"
                           frameBorder="0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                           allowFullScreen
                         />
                       ) : isLoading ? (
-                        <p className="text-gray-500 italic">Buscando video...</p>
+                        <p className="text-gray-400 italic">Buscando video...</p>
                       ) : (
-                        <p className="text-gray-500 italic">Video no disponible</p>
+                        <p className="text-gray-400 italic">Video no disponible</p>
                       )}
                       <div className="flex items-center space-x-1">
-                        <label className="text-gray-600">Series:</label>
+                        <label className="text-gray-300">Series:</label>
                         <input
                           type="number"
                           value={currentExercise.sets}
                           onChange={(e) =>
                             handleInputChange(selectedDayIndex, exerciseIndex, "sets", Number(e.target.value))
                           }
-                          className="w-12 p-1 border rounded text-sm"
+                          className="w-12 p-1 border border-gray-700 rounded bg-black text-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-500"
                         />
                       </div>
                       <div className="flex items-center space-x-1">
-                        <label className="text-gray-600">Reps:</label>
+                        <label className="text-gray-300">Reps:</label>
                         <input
                           type="number"
                           value={currentExercise.reps}
                           onChange={(e) =>
                             handleInputChange(selectedDayIndex, exerciseIndex, "reps", Number(e.target.value))
                           }
-                          className="w-12 p-1 border rounded text-sm"
+                          className="w-12 p-1 border border-gray-700 rounded bg-black text-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-500"
                         />
                       </div>
                       <div className="flex items-center space-x-1">
-                        <label className="text-gray-600">Peso:</label>
+                        <label className="text-gray-300">Peso:</label>
                         <input
                           type="text"
                           value={currentExercise.weight}
                           onChange={(e) =>
                             handleInputChange(selectedDayIndex, exerciseIndex, "weight", e.target.value)
                           }
-                          className="w-20 p-1 border rounded text-sm"
+                          className="w-20 p-1 border border-gray-700 rounded bg-black text-white text-sm focus:outline-none focus:ring-2 focus:ring-gray-500"
                         />
                       </div>
                       <div className="flex flex-col">
-                        <label className="text-gray-600">Notas:</label>
+                        <label className="text-gray-300">Notas:</label>
                         <textarea
                           value={currentExercise.notes || ""}
                           onChange={(e) =>
                             handleInputChange(selectedDayIndex, exerciseIndex, "notes", e.target.value)
                           }
-                          className="w-full p-1 border rounded text-sm h-12 resize-none"
+                          className="w-full p-1 border border-gray-700 rounded bg-black text-white text-sm h-12 resize-none focus:outline-none focus:ring-2 focus:ring-gray-500"
                         />
                       </div>
                       <button
                         onClick={() => handleSave(selectedDayIndex, exerciseIndex)}
-                        className="mt-1 w-full bg-green-500 text-white py-1 rounded hover:bg-green-600 text-sm"
+                        className="mt-1 w-full bg-white text-black py-1 rounded hover:bg-gray-200 transition-colors text-sm shadow-sm"
                       >
                         Guardar
                       </button>
@@ -270,20 +275,20 @@ export const RoutinePage: React.FC = () => {
             })}
           </ul>
           {selectedDay.explanation && (
-            <p className="mt-2 text-gray-600 italic text-sm">{selectedDay.explanation}</p>
+            <p className="mt-2 text-gray-300 italic text-sm font-sans">{selectedDay.explanation}</p>
           )}
         </div>
 
         <div className="mt-4 flex space-x-2">
           <button
             onClick={handleBack}
-            className="w-full bg-blue-500 text-white py-1 rounded hover:bg-blue-600 text-sm"
+            className="w-full bg-white text-black py-1 rounded hover:bg-gray-200 transition-colors text-sm shadow-sm"
           >
             Volver
           </button>
           <button
             onClick={handleProgress}
-            className="w-full bg-purple-500 text-white py-1 rounded hover:bg-purple-600 text-sm"
+            className="w-full bg-white text-black py-1 rounded hover:bg-gray-200 transition-colors text-sm shadow-sm"
           >
             Progreso
           </button>

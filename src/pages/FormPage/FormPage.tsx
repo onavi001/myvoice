@@ -42,60 +42,60 @@ export const FormPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="p-6 max-w-md mx-auto">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Datos Iniciales</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-screen bg-black text-white">
+      <div className="p-4 max-w-md mx-auto">
+        <h2 className="text-xl font-sans font-semibold text-white mb-3">Datos Iniciales</h2>
+        <form onSubmit={handleSubmit} className="space-y-3">
           <input
             name="level"
             placeholder="Nivel (principiante/intermedio/avanzado)"
             value={formData.level}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border border-gray-700 rounded bg-black text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
           />
           <input
             name="goal"
             placeholder="Objetivo (fuerza/hipertrofia/resistencia)"
             value={formData.goal}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border border-gray-700 rounded bg-black text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
           />
           <input
             name="days"
             placeholder="Días por semana (1-7)"
             value={formData.days}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border border-gray-700 rounded bg-black text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
           />
           <input
             name="equipment"
             placeholder="Equipo (gym/casa/pesas)"
             value={formData.equipment}
             onChange={handleChange}
-            className="w-full p-2 border rounded"
+            className="w-full p-2 border border-gray-700 rounded bg-black text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-500 text-white p-2 rounded hover:bg-orange-600 disabled:bg-orange-300"
+            className="w-full bg-white text-black py-2 rounded hover:bg-gray-200 transition-colors disabled:bg-gray-600 disabled:text-gray-400 text-sm shadow-sm"
           >
             {loading ? "Generando..." : "Generar Rutina"}
           </button>
         </form>
 
         {error && (
-          <div className="mt-4 p-2 bg-red-100 text-red-700 rounded">
+          <div className="mt-3 p-2 bg-gray-900 text-red-400 rounded shadow-sm text-sm">
             {error}
           </div>
         )}
 
         {routine && !loading && (
-          <div className="mt-6">
-            <h3 className="text-xl font-bold text-blue-900">Tu Rutina Personalizada</h3>
-            <p>Rutina generada. Redirigiendo a la página de detalles...</p>
+          <div className="mt-4">
+            <h3 className="text-lg font-sans font-semibold text-white mb-2">Tu Rutina Personalizada</h3>
+            <p className="text-gray-300 text-sm">Rutina generada. Redirigiendo a la página de detalles...</p>
             <button
               onClick={handleClear}
-              className="mt-4 w-full bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
+              className="mt-3 w-full bg-gray-700 text-white py-1 rounded hover:bg-gray-600 transition-colors text-sm shadow-sm"
             >
               Limpiar Rutina
             </button>
