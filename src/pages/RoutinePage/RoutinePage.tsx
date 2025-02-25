@@ -14,8 +14,9 @@ export const RoutinePage: React.FC = () => {
   const [expandedExercises, setExpandedExercises] = useState<Record<number, boolean>>({});
   const [editData, setEditData] = useState<Record<string, any>>({});
   const [loadingVideos, setLoadingVideos] = useState<Record<number, boolean>>({});
+  const [showDayDetails, setShowDayDetails] = useState(false);
 
-  const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+  const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || "TU_CLAVE_API_YOUTUBE";
 
   const handleBack = () => {
     navigate("/");
@@ -29,6 +30,11 @@ export const RoutinePage: React.FC = () => {
     setSelectedDayIndex(Number(e.target.value));
     setExpandedExercises({});
     setLoadingVideos({});
+    setShowDayDetails(false);
+  };
+
+  const toggleDayDetails = () => {
+    setShowDayDetails((prev) => !prev);
   };
 
   const fetchExerciseVideo = async (exerciseName: string, dayIndex: number, exerciseIndex: number) => {
@@ -109,31 +115,32 @@ export const RoutinePage: React.FC = () => {
   if (!routine) {
     return (
       <div className="min-h-screen bg-gray-100">
-        <div className="p-6 max-w-md mx-auto">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Tu Rutina</h2>
-          <p className="text-gray-600">No hay rutina generada. Por favor, genera una desde la página principal.</p>
+        <div className="p-4 max-w-md mx-auto">
+          <h2 className="text-xl font-bold text-gray-800 mb-3">Tu Rutina</h2>
+          <p className="text-gray-600 text-sm">No hay rutina generada. Genera una desde la página principal.</p>
           <button
             onClick={handleBack}
-            className="mt-4 w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+            className="mt-3 w-full bg-blue-500 text-white py-1 rounded hover:bg-blue-600 text-sm"
           >
-            Volver al formulario
+            Volver
           </button>
         </div>
       </div>
     );
   }
 
+  const selectedDay = routine.routine[selectedDayIndex];
+
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="p-6 max-w-md mx-auto">
-        <h2 className="text-2xl font-bold text-blue-900 mb-4">Tu Rutina Personalizada</h2>
+      <div className="p-4 max-w-md mx-auto">
+        <h2 className="text-xl font-bold text-blue-900 mb-3">Tu Rutina</h2>
 
-        <div className="mb-4">
-          <label className="block text-gray-700 font-semibold mb-1">Seleccionar Día:</label>
+        <div className="mb-3">
           <select
             value={selectedDayIndex}
             onChange={handleDayChange}
-            className="w-full p-2 border rounded bg-white"
+            className="w-full p-1 border rounded bg-white text-sm"
           >
             {routine.routine.map((day, index) => (
               <option key={index} value={index}>
@@ -143,18 +150,31 @@ export const RoutinePage: React.FC = () => {
           </select>
         </div>
 
-        <div className="mt-4">
-          <h3 className="font-semibold text-lg text-gray-800 mb-2">
-            {routine.routine[selectedDayIndex].day}
-          </h3>
+        <div>
+          <button
+            onClick={toggleDayDetails}
+            className="w-full flex justify-between items-center bg-blue-500 text-white p-2 rounded hover:bg-blue-600 text-sm mb-2"
+          >
+            <span>{selectedDay.day}</span>
+            <span>{showDayDetails ? "▲" : "▼"}</span>
+          </button>
+          {showDayDetails && (
+            <div className="mb-3 text-sm">
+              <p className="text-gray-700 font-semibold">Músculos:</p>
+              <p className="text-gray-600">{selectedDay.musclesWorked.join(", ")}</p>
+              <p className="text-gray-700 font-semibold mt-1">Calentamiento:</p>
+              <ul className="list-disc pl-4 text-gray-600">
+                {selectedDay.warmUpOptions.map((option, index) => (
+                  <li key={index} className="truncate">{option}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <ul className="space-y-2">
-            {routine.routine[selectedDayIndex].exercises.map((exercise, exerciseIndex) => {
+            {selectedDay.exercises.map((exercise, exerciseIndex) => {
               const key = `${selectedDayIndex}-${exerciseIndex}`;
               const edited = editData[key] || {};
-              const currentExercise = {
-                ...exercise,
-                ...edited,
-              };
+              const currentExercise = { ...exercise, ...edited };
               const isExpanded = expandedExercises[exerciseIndex] || false;
               const isLoading = loadingVideos[exerciseIndex] || false;
 
@@ -162,82 +182,86 @@ export const RoutinePage: React.FC = () => {
                 <li key={exerciseIndex} className="bg-white rounded-lg shadow-md border-l-4 border-blue-500">
                   <button
                     onClick={() => toggleExerciseExpand(exerciseIndex, exercise.name)}
-                    className="w-full flex justify-between items-center p-4 text-left focus:outline-none"
+                    className="w-full flex justify-between items-center p-2 text-left focus:outline-none"
                   >
-                    <span className="text-lg font-semibold">{exercise.name}</span>
+                    <span className="text-base font-semibold truncate">{exercise.name}</span>
                     <span>{isExpanded ? "▲" : "▼"}</span>
                   </button>
                   {isExpanded && (
-                    <div className="p-4 pt-0 space-y-2">
-                      <p className="text-gray-700">{exercise.muscle_group}</p>
-                      {currentExercise.videoUrl ? (
-                        <>
-                          <iframe
-                            src={currentExercise.videoUrl}
-                            title={`Demostración de ${exercise.name}`}
-                            className="w-full h-48 rounded"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                          />
-                          <p className="text-gray-600 text-sm">
-                            Muestra la técnica correcta y los músculos trabajados.
-                          </p>
-                        </>
-                      ) : isLoading ? (
-                        <p className="text-gray-500 italic">Buscando video de demostración...</p>
-                      ) : (
-                        <p className="text-gray-500 italic">Video no disponible aún.</p>
+                    <div className="p-2 space-y-1 text-sm">
+                      <p className="text-gray-700 truncate">{exercise.muscle_group}</p>
+                      {currentExercise.tips && currentExercise.tips.length > 0 && (
+                        <div>
+                          <p className="text-gray-600 font-semibold">Consejos:</p>
+                          <ul className="list-disc pl-4 text-gray-600">
+                            {currentExercise.tips.map((tip:string, index: React.Key) => (
+                              <li key={index} className="truncate">{tip}</li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
-                      <div>
-                        <label className="text-gray-600">Series: </label>
+                      {currentExercise.videoUrl ? (
+                        <iframe
+                          src={currentExercise.videoUrl}
+                          title={`Demostración de ${exercise.name}`}
+                          className="w-full h-32 rounded"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      ) : isLoading ? (
+                        <p className="text-gray-500 italic">Buscando video...</p>
+                      ) : (
+                        <p className="text-gray-500 italic">Video no disponible</p>
+                      )}
+                      <div className="flex items-center space-x-1">
+                        <label className="text-gray-600">Series:</label>
                         <input
                           type="number"
                           value={currentExercise.sets}
                           onChange={(e) =>
                             handleInputChange(selectedDayIndex, exerciseIndex, "sets", Number(e.target.value))
                           }
-                          className="w-16 p-1 border rounded"
+                          className="w-12 p-1 border rounded text-sm"
                         />
                       </div>
-                      <div>
-                        <label className="text-gray-600">Repeticiones: </label>
+                      <div className="flex items-center space-x-1">
+                        <label className="text-gray-600">Reps:</label>
                         <input
                           type="number"
                           value={currentExercise.reps}
                           onChange={(e) =>
                             handleInputChange(selectedDayIndex, exerciseIndex, "reps", Number(e.target.value))
                           }
-                          className="w-16 p-1 border rounded"
+                          className="w-12 p-1 border rounded text-sm"
                         />
                       </div>
-                      <div>
-                        <label className="text-gray-600">Peso: </label>
+                      <div className="flex items-center space-x-1">
+                        <label className="text-gray-600">Peso:</label>
                         <input
                           type="text"
                           value={currentExercise.weight}
                           onChange={(e) =>
                             handleInputChange(selectedDayIndex, exerciseIndex, "weight", e.target.value)
                           }
-                          className="w-32 p-1 border rounded"
+                          className="w-20 p-1 border rounded text-sm"
                         />
                       </div>
-                      <div>
-                        <label className="text-gray-600">Notas: </label>
+                      <div className="flex flex-col">
+                        <label className="text-gray-600">Notas:</label>
                         <textarea
                           value={currentExercise.notes || ""}
                           onChange={(e) =>
                             handleInputChange(selectedDayIndex, exerciseIndex, "notes", e.target.value)
                           }
-                          className="w-full p-1 border rounded"
-                          rows={2}
+                          className="w-full p-1 border rounded text-sm h-12 resize-none"
                         />
                       </div>
                       <button
                         onClick={() => handleSave(selectedDayIndex, exerciseIndex)}
-                        className="mt-2 bg-green-500 text-white p-1 rounded hover:bg-green-600"
+                        className="mt-1 w-full bg-green-500 text-white py-1 rounded hover:bg-green-600 text-sm"
                       >
-                        Guardar cambios y registrar progreso
+                        Guardar
                       </button>
                     </div>
                   )}
@@ -245,23 +269,23 @@ export const RoutinePage: React.FC = () => {
               );
             })}
           </ul>
-          {routine.routine[selectedDayIndex].explanation && (
-            <p className="mt-2 text-gray-600 italic">{routine.routine[selectedDayIndex].explanation}</p>
+          {selectedDay.explanation && (
+            <p className="mt-2 text-gray-600 italic text-sm">{selectedDay.explanation}</p>
           )}
         </div>
 
-        <div className="mt-6 flex space-x-4">
+        <div className="mt-4 flex space-x-2">
           <button
             onClick={handleBack}
-            className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+            className="w-full bg-blue-500 text-white py-1 rounded hover:bg-blue-600 text-sm"
           >
-            Volver al formulario
+            Volver
           </button>
           <button
             onClick={handleProgress}
-            className="w-full bg-purple-500 text-white p-2 rounded hover:bg-purple-600"
+            className="w-full bg-purple-500 text-white py-1 rounded hover:bg-purple-600 text-sm"
           >
-            Ver Progreso
+            Progreso
           </button>
         </div>
       </div>

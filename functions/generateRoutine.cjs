@@ -7,36 +7,43 @@ module.exports.handler = async (event) => {
     const { level, goal, days, equipment } = body;
 
     const prompt = `
-      Generate a detailed personalized workout routine for a user with:
-      - Goal: ${goal}
-      - Fitness Level: ${level}
-      - Training Days: ${days}
-      - Equipment: ${equipment}
-      **Include:**
-      - Exercises (with names and muscle groups)
-      - Sets, reps, and suggested weight ranges (e.g., "Light 5-10kg")
-      - Rest times between sets (e.g., "60 seconds")
-      - A short explanation of why these exercises fit the user's goal
-      **Format the response as JSON with this structure:**
+      Genera una rutina de entrenamiento personalizada y detallada para un usuario con:
+      - Objetivo: ${goal}
+      - Nivel de condición física: ${level}
+      - Días de entrenamiento: ${days}
+      - Equipo: ${equipment}
+      **Incluye:**
+      - Ejercicios (con nombres y grupos musculares)
+      - Series, repeticiones y rangos de peso sugeridos (por ejemplo, "Ligero 5-10kg")
+      - Tiempos de descanso entre series (por ejemplo, "60 segundos")
+      - Una lista de 2-3 consejos específicos para cada ejercicio (por ejemplo, ["Mantén la espalda recta", "Respira al bajar"])
+      - Una lista de músculos trabajados cada día (por ejemplo, "pectorales, tríceps")
+      - Una lista de 2-3 opciones de calentamiento por día (por ejemplo, "5 min cinta, círculos de brazos")
+      - Una breve explicación de por qué estos ejercicios se ajustan al objetivo del usuario
+      **Nombra cada día de forma descriptiva y breve según el enfoque del entrenamiento de ese día (por ejemplo, "Pecho y Piernas", "Espalda y Bíceps") en lugar de usar números o días de la semana.**
+      **Formatea la respuesta en JSON con esta estructura:**
       {
         "routine": [
           {
-            "day": "Day 1",
+            "day": "Entrenamiento Descriptivo",
             "exercises": [
               {
-                "name": "Exercise Name",
-                "muscle_group": "Muscle Group",
+                "name": "Nombre del Ejercicio",
+                "muscle_group": "Grupo Muscular",
                 "sets": 4,
                 "reps": 12,
-                "weight": "Moderate",
-                "rest": "60 seconds"
+                "weight": "Moderado",
+                "rest": "60 segundos",
+                "tips": ["Consejo 1", "Consejo 2"]
               }
             ],
-            "explanation": "Explanation text"
+            "musclesWorked": ["músculo1", "músculo2"],
+            "warmUpOptions": ["opción1", "opción2"],
+            "explanation": "Texto de explicación"
           }
         ]
       }
-      Return only the JSON object, no additional text outside the JSON.
+      Devuelve solo el objeto JSON, sin texto adicional fuera del JSON.
     `;
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -51,7 +58,6 @@ module.exports.handler = async (event) => {
           { role: "system", content: "You are a fitness expert generating workout routines in JSON format." },
           { role: "user", content: prompt },
         ],
-        max_tokens: 1500,
         temperature: 0.7,
       }),
     });
@@ -62,7 +68,7 @@ module.exports.handler = async (event) => {
 
     const data = await response.json();
     const routine = data.choices[0]?.message.content;
-
+    console.log(routine);
     return {
       statusCode: 200,
       body: routine,

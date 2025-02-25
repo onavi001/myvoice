@@ -10,11 +10,14 @@ interface RoutineExercise {
   rest: string;
   notes?: string;
   videoUrl?: string; // Nuevo campo para almacenar el URL del video
+  tips: string[];
 }
 
 interface RoutineDay {
   day: string;
   exercises: RoutineExercise[];
+  musclesWorked: string[];
+  warmUpOptions: string[];
   explanation?: string;
 }
 
