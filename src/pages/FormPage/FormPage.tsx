@@ -10,7 +10,7 @@ interface FormData {
   days: string;
   equipment: string;
   name: string;
-  notes: string; // Nuevo campo para notas del usuario
+  notes: string;
 }
 
 export const FormPage: React.FC = () => {
@@ -43,6 +43,10 @@ export const FormPage: React.FC = () => {
   const handleClear = () => {
     dispatch(clearRoutines());
     setFormData({ level: "", goal: "", days: "", equipment: "", name: "", notes: "" });
+  };
+
+  const handleAddManualRoutine = () => {
+    navigate("/add-routine");
   };
 
   return (
@@ -98,6 +102,13 @@ export const FormPage: React.FC = () => {
             className="w-full bg-[#34C759] text-black py-2 rounded hover:bg-[#2DBF4E] transition-colors disabled:bg-[#4A4A4A] disabled:text-[#B0B0B0] text-xs shadow-sm"
           >
             {loading ? "Generando..." : "Generar Rutina"}
+          </button>
+          <button
+            type="button"
+            onClick={handleAddManualRoutine}
+            className="w-full bg-white text-black py-2 rounded hover:bg-[#E0E0E0] transition-colors text-xs shadow-sm"
+          >
+            Agregar Rutina Manual
           </button>
         </form>
 

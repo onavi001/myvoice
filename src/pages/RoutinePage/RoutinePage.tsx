@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "../../slices/store";
-import { updateExercise, setExerciseVideo, selectRoutine } from "../../slices/routine/routineSlice";
+import { updateExercise, setExerciseVideo, selectRoutine, deleteRoutine } from "../../slices/routine/routineSlice";
 import { addProgress } from "../../slices/progress/progressSlice";
 import { useNavigate } from "react-router-dom";
 
@@ -19,6 +19,17 @@ export const RoutinePage: React.FC = () => {
 
   const handleBack = () => navigate("/");
   const handleProgress = () => navigate("/progress");
+  const handleAddRoutine = () => navigate("/add-routine");
+  const handleEditRoutine = () => {
+    if (selectedRoutineIndex !== null) {
+      navigate(`${selectedRoutineIndex}`);
+    }
+  };
+  const handleDeleteRoutine = () => {
+    if (selectedRoutineIndex !== null) {
+      dispatch(deleteRoutine(selectedRoutineIndex));
+    }
+  };
 
   const fetchExerciseVideo = async (exerciseName: string, routineIndex: number, dayIndex: number, exerciseIndex: number) => {
     setLoadingVideos((prev) => ({ ...prev, [exerciseIndex]: true }));
@@ -79,12 +90,14 @@ export const RoutinePage: React.FC = () => {
         dispatch(updateExercise({ routineIndex: selectedRoutineIndex, dayIndex, exerciseIndex, updatedExercise }));
         const currentExercise = routines[selectedRoutineIndex].routine[dayIndex].exercises[exerciseIndex];
         dispatch(addProgress({
+          routineIndex: selectedRoutineIndex,
           dayIndex,
           exerciseIndex,
           sets: Number(updatedExercise.sets || currentExercise.sets),
           reps: Number(updatedExercise.reps || currentExercise.reps),
           weight: updatedExercise.weight || currentExercise.weight,
           notes: updatedExercise.notes || currentExercise.notes || "",
+          date: new Date().toISOString(),
           ...updatedExercise,
         }));
         setEditData((prev) => {
@@ -103,6 +116,12 @@ export const RoutinePage: React.FC = () => {
           <h2 className="text-sm font-sans font-semibold text-white mb-3 truncate">Tu Rutina</h2>
           <p className="text-[#B0B0B0] text-xs">No hay rutinas generadas. Genera una desde la página principal.</p>
           <button
+            onClick={handleAddRoutine}
+            className="mt-3 w-full bg-[#34C759] text-black py-1 rounded hover:bg-[#2DBF4E] transition-colors text-xs shadow-sm"
+          >
+            Agregar Rutina Manual
+          </button>
+          <button
             onClick={handleBack}
             className="mt-3 w-full bg-white text-black py-1 rounded hover:bg-[#E0E0E0] transition-colors text-xs shadow-sm"
           >
@@ -119,6 +138,12 @@ export const RoutinePage: React.FC = () => {
         <div className="p-4 max-w-md mx-auto">
           <h2 className="text-sm font-sans font-semibold text-white mb-3 truncate">Tu Rutina</h2>
           <p className="text-[#B0B0B0] text-xs">Selecciona una rutina para ver los detalles.</p>
+          <button
+            onClick={handleAddRoutine}
+            className="mt-3 w-full bg-[#34C759] text-black py-1 rounded hover:bg-[#2DBF4E] transition-colors text-xs shadow-sm"
+          >
+            Agregar Rutina Manual
+          </button>
           <button
             onClick={handleBack}
             className="mt-3 w-full bg-white text-black py-1 rounded hover:bg-[#E0E0E0] transition-colors text-xs shadow-sm"
@@ -154,7 +179,7 @@ export const RoutinePage: React.FC = () => {
               key={index}
               onClick={() => {
                 dispatch(selectRoutine(index));
-                setSelectedDayIndex(0); // Resetear el día al cambiar de rutina
+                setSelectedDayIndex(0);
                 setExpandedExercises({});
               }}
               className={`px-2 py-1 rounded-full text-xs font-sans font-medium transition-colors shadow-sm truncate max-w-[120px] ${
@@ -234,7 +259,7 @@ export const RoutinePage: React.FC = () => {
                           <span className="text-[#B0B0B0] font-semibold">Consejos:</span>
                           <ul className="list-disc pl-3 text-[#FFFFFF] max-w-full">
                             {currentExercise.tips.map((tip: string, index: number) => (
-                              <li key={index} className="">{tip}</li>
+                              <li key={index}>{tip}</li>
                             ))}
                           </ul>
                         </div>
@@ -326,6 +351,20 @@ export const RoutinePage: React.FC = () => {
             className="w-full bg-white text-black py-1 rounded hover:bg-[#E0E0E0] transition-colors text-xs shadow-sm"
           >
             Volver
+          </button>
+          <button
+            onClick={handleEditRoutine}
+            className="w-full bg-[#34C759] text-black py-1 rounded hover:bg-[#2DBF4E] transition-colors text-xs shadow-sm"
+            disabled={selectedRoutineIndex === null}
+          >
+            Editar Rutina
+          </button>
+          <button
+            onClick={handleDeleteRoutine}
+            className="w-full bg-red-600 text-white py-1 rounded hover:bg-red-700 transition-colors text-xs shadow-sm"
+            disabled={selectedRoutineIndex === null}
+          >
+            Eliminar Rutina
           </button>
           <button
             onClick={handleProgress}

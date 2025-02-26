@@ -51,7 +51,9 @@ export const fetchRoutine = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      return defaultResponse[0] as unknown as Routine;
+      if (formData.notes === "navi") {
+        return defaultResponse as unknown as Routine;
+      }
       const response = await fetch("/.netlify/functions/generateRoutine", {
         method: "POST",
         headers: {
@@ -64,7 +66,7 @@ export const fetchRoutine = createAsyncThunk(
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
-      const routine: RoutineDay[] = (await response.json()).routine;
+      const routine: RoutineDay[] = await response.json();
       return { name: formData.name || "Rutina sin nombre", routine };
     } catch (err) {
       return rejectWithValue(err instanceof Error ? err.message : "Error desconocido");
@@ -86,6 +88,35 @@ const routineSlice = createSlice({
     selectRoutine(state, action: PayloadAction<number>) {
       state.selectedRoutineIndex = action.payload;
       localStorage.setItem("selectedRoutineIndex", action.payload.toString());
+    },
+    addRoutine(state, action: PayloadAction<Routine>) {
+      state.routines.push(action.payload);
+      state.selectedRoutineIndex = state.routines.length - 1;
+      localStorage.setItem("routines", JSON.stringify(state.routines));
+      localStorage.setItem("selectedRoutineIndex", state.selectedRoutineIndex.toString());
+    },
+    editRoutine(state, action: PayloadAction<{ routineIndex: number; updatedRoutine: Routine }>) {
+      const { routineIndex, updatedRoutine } = action.payload;
+      if (state.routines[routineIndex]) {
+        state.routines[routineIndex] = updatedRoutine;
+        localStorage.setItem("routines", JSON.stringify(state.routines));
+      }
+    },
+    deleteRoutine(state, action: PayloadAction<number>) {
+      const routineIndex = action.payload;
+      state.routines.splice(routineIndex, 1);
+      if (state.routines.length === 0) {
+        state.selectedRoutineIndex = null;
+      } else if (state.selectedRoutineIndex === routineIndex) {
+        state.selectedRoutineIndex = routineIndex > 0 ? routineIndex - 1 : 0;
+      } else if (state.selectedRoutineIndex && state.selectedRoutineIndex > routineIndex) {
+        state.selectedRoutineIndex -= 1;
+      }
+      localStorage.setItem("routines", JSON.stringify(state.routines));
+      localStorage.setItem(
+        "selectedRoutineIndex",
+        state.selectedRoutineIndex !== null ? state.selectedRoutineIndex.toString() : ""
+      );
     },
     updateExercise(
       state,
@@ -142,5 +173,6 @@ const routineSlice = createSlice({
   },
 });
 
-export const { clearRoutines, selectRoutine, updateExercise, setExerciseVideo } = routineSlice.actions;
+export const { clearRoutines, selectRoutine, addRoutine, editRoutine, deleteRoutine, updateExercise, setExerciseVideo } =
+  routineSlice.actions;
 export default routineSlice.reducer;
