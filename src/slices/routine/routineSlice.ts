@@ -52,7 +52,7 @@ export const fetchRoutine = createAsyncThunk(
   ) => {
     try {
       if (formData.notes === "navi") {
-        return defaultResponse as unknown as Routine;
+        return defaultResponse[0] as unknown as Routine;
       }
       const response = await fetch("/.netlify/functions/generateRoutine", {
         method: "POST",

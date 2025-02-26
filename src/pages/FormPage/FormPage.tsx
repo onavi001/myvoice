@@ -46,7 +46,7 @@ export const FormPage: React.FC = () => {
   };
 
   const handleAddManualRoutine = () => {
-    navigate("/add-routine");
+    navigate("/routine/add-routine");
   };
 
   return (
