@@ -1,45 +1,31 @@
-// generateRoutine.cjs
 const fetch = require("node-fetch");
 
 module.exports.handler = async (event) => {
   try {
     const body = JSON.parse(event.body);
-    const { level, goal, days, equipment } = body;
+    const { level, goal, days, equipment, name = "Rutina sin nombre", notes = "" } = body;
 
     const prompt = `
-      Genera una rutina de entrenamiento personalizada y detallada para un usuario con:
-      - Objetivo: ${goal}
-      - Nivel de condición física: ${level}
-      - Días de entrenamiento: ${days}
-      - Equipo: ${equipment}
-      **Incluye:**
-      - Ejercicios (con nombres y grupos musculares)
-      - Series, repeticiones y rangos de peso sugeridos (por ejemplo, "Ligero 5-10kg")
-      - Tiempos de descanso entre series (por ejemplo, "60 segundos")
-      - Una lista de 2-3 consejos específicos para cada ejercicio (por ejemplo, ["Mantén la espalda recta", "Respira al bajar"])
-      - Una lista de músculos trabajados cada día (por ejemplo, "pectorales, tríceps")
-      - Una lista de 2-3 opciones de calentamiento por día (por ejemplo, "5 min cinta, círculos de brazos")
-      - Una breve explicación de por qué estos ejercicios se ajustan al objetivo del usuario
-      **Nombra cada día de forma descriptiva y breve según el enfoque del entrenamiento de ese día (por ejemplo, "Pecho y Piernas", "Espalda y Bíceps") en lugar de usar números o días de la semana.**
-      **Formatea la respuesta en JSON con esta estructura:**
+      Genera una rutina de entrenamiento personalizada y detallada llamada "${name}" para un usuario con:
+      - Objetivo: ${goal} (fuerza: levantamientos pesados; hipertrofia: volumen; resistencia: alta repetición)
+      - Nivel: ${level} (principiante: básico; intermedio: mixto; avanzado: complejo)
+      - Días: ${days} (exactamente este número)
+      - Equipo: ${equipment} (gym: máquinas y pesas; casa: peso corporal; pesas: pesas libres)
+      ${notes ? `- Notas (obligatorio seguir): "${notes}"` : ""}
+      **Instrucciones:**
+      - Genera ${days} días, cada uno con 6 ejercicios únicos y específicos (no repitas entre días).
+      - Por ejercicio: nombre exacto (ej. "Press de banca con barra"), grupo muscular principal, series (3-5), repeticiones (6-15 según objetivo), peso sugerido (ej. "10-15kg"), descanso (60-120s), 2 consejos específicos.
+      - Por día: 3 músculos trabajados, 3 calentamientos relevantes, explicación breve (15-20 palabras).
+      - Nombra días descriptivamente (ej. "Pecho y Tríceps").
+      **Formato JSON:**
       {
         "routine": [
           {
-            "day": "Entrenamiento Descriptivo",
-            "exercises": [
-              {
-                "name": "Nombre del Ejercicio",
-                "muscle_group": "Grupo Muscular",
-                "sets": 4,
-                "reps": 12,
-                "weight": "Moderado",
-                "rest": "60 segundos",
-                "tips": ["Consejo 1", "Consejo 2"]
-              }
-            ],
-            "musclesWorked": ["músculo1", "músculo2"],
-            "warmUpOptions": ["opción1", "opción2"],
-            "explanation": "Texto de explicación"
+            "day": "...",
+            "exercises": [{"name": "...", "muscle_group": "...", "sets": 4, "reps": 8, "weight": "...", "rest": "...", "tips": ["...", "..."]}],
+            "musclesWorked": ["...", "...", "..."],
+            "warmUpOptions": ["...", "...", "..."],
+            "explanation": "..."
           }
         ]
       }
@@ -53,31 +39,21 @@ module.exports.handler = async (event) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama3-8b-8192",
+        model: "mixtral-8x7b-32768",
         messages: [
-          { role: "system", content: "You are a fitness expert generating workout routines in JSON format." },
+          { role: "system", content: "Eres un experto en fitness que genera rutinas precisas en JSON." },
           { role: "user", content: prompt },
         ],
-        temperature: 0.7,
+        max_tokens: 5500,
+        temperature: 0.1,
       }),
     });
 
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-
+    if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
     const data = await response.json();
     const routine = data.choices[0]?.message.content;
-    console.log(routine);
-    return {
-      statusCode: 200,
-      body: routine,
-    };
+    return { statusCode: 200, body: routine };
   } catch (error) {
-    console.error(error)
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message }),
-    };
+    return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
   }
 };

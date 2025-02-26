@@ -5,7 +5,7 @@ import { addProgress, updateProgress, clearProgress, ProgressEntry } from "../..
 import { useNavigate } from "react-router-dom";
 
 export const ProgressPage: React.FC = () => {
-  const { routine } = useSelector((state: RootState) => state.routine);
+  const { routines, selectedRoutineIndex } = useSelector((state: RootState) => state.routine);
   const { progress } = useSelector((state: RootState) => state.progress);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -39,17 +39,21 @@ export const ProgressPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    dispatch(
-      addProgress({
-        dayIndex: Number(formData.dayIndex),
-        exerciseIndex: Number(formData.exerciseIndex),
-        sets: Number(formData.sets),
-        reps: Number(formData.reps),
-        weight: formData.weight,
-        notes: formData.notes,
-      })
-    );
-    setFormData({ dayIndex: 0, exerciseIndex: 0, sets: "", reps: "", weight: "", notes: "" });
+    if (selectedRoutineIndex !== null) {
+      dispatch(
+        addProgress({
+          routineIndex: selectedRoutineIndex,
+          dayIndex: Number(formData.dayIndex),
+          exerciseIndex: Number(formData.exerciseIndex),
+          sets: Number(formData.sets),
+          reps: Number(formData.reps),
+          weight: formData.weight,
+          notes: formData.notes,
+          date: new Date().toISOString(),
+        })
+      );
+      setFormData({ dayIndex: 0, exerciseIndex: 0, sets: "", reps: "", weight: "", notes: "" });
+    }
   };
 
   const handleEdit = (index: number) => {
@@ -67,12 +71,12 @@ export const ProgressPage: React.FC = () => {
     dispatch(clearProgress());
   };
 
-  if (!routine) {
+  if (routines.length === 0) {
     return (
       <div className="min-h-screen bg-[#1A1A1A] text-white flex flex-col">
         <div className="p-4 max-w-md mx-auto flex-1">
           <h2 className="text-sm font-sans font-semibold text-white mb-3 truncate">Progreso</h2>
-          <p className="text-[#B0B0B0] text-xs">No hay rutina generada. Genera una desde la página principal.</p>
+          <p className="text-[#B0B0B0] text-xs">No hay rutinas generadas. Genera una desde la página principal.</p>
           <button
             onClick={() => navigate("/")}
             className="mt-3 w-full bg-white text-black py-1 rounded hover:bg-[#E0E0E0] transition-colors text-xs shadow-sm"
@@ -83,6 +87,25 @@ export const ProgressPage: React.FC = () => {
       </div>
     );
   }
+
+  if (selectedRoutineIndex === null || !routines[selectedRoutineIndex]) {
+    return (
+      <div className="min-h-screen bg-[#1A1A1A] text-white flex flex-col">
+        <div className="p-4 max-w-md mx-auto flex-1">
+          <h2 className="text-sm font-sans font-semibold text-white mb-3 truncate">Progreso</h2>
+          <p className="text-[#B0B0B0] text-xs">Selecciona una rutina en la página de rutinas para ver el progreso.</p>
+          <button
+            onClick={handleBack}
+            className="mt-3 w-full bg-white text-black py-1 rounded hover:bg-[#E0E0E0] transition-colors text-xs shadow-sm"
+          >
+            Volver a la rutina
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedRoutine = routines[selectedRoutineIndex];
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] text-white flex flex-col">
@@ -98,7 +121,7 @@ export const ProgressPage: React.FC = () => {
         `}
       </style>
       <div className="p-4 max-w-md mx-auto flex-1">
-        <h2 className="text-sm font-sans font-semibold text-white mb-4 truncate">Progreso Semanal</h2>
+        <h2 className="text-sm font-sans font-semibold text-white mb-4 truncate">Progreso Semanal - {selectedRoutine.name}</h2>
 
         <form onSubmit={handleSubmit} className="mb-4 p-2 bg-[#2D2D2D] rounded-lg shadow-sm space-y-2">
           <h3 className="text-sm font-sans font-semibold text-white mb-2 truncate">Registrar Progreso</h3>
@@ -111,7 +134,7 @@ export const ProgressPage: React.FC = () => {
                 onChange={handleInputChange}
                 className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#34C759]"
               >
-                {routine.routine.map((day, index) => (
+                {selectedRoutine.routine.map((day, index) => (
                   <option key={index} value={index} className="bg-[#1A1A1A] text-white">
                     {day.day}
                   </option>
@@ -126,7 +149,7 @@ export const ProgressPage: React.FC = () => {
                 onChange={handleInputChange}
                 className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#34C759]"
               >
-                {routine.routine[formData.dayIndex].exercises.map((exercise, index) => (
+                {selectedRoutine.routine[formData.dayIndex].exercises.map((exercise, index) => (
                   <option key={index} value={index} className="bg-[#1A1A1A] text-white">
                     {exercise.name}
                   </option>
@@ -188,6 +211,7 @@ export const ProgressPage: React.FC = () => {
               <table className="w-full bg-[#2D2D2D] rounded-lg shadow-sm text-xs">
                 <thead>
                   <tr className="bg-[#4A4A4A] text-[#B0B0B0]">
+                    <th className="p-2">Rutina</th>
                     <th className="p-2">Fecha</th>
                     <th className="p-2">Día</th>
                     <th className="p-2">Ejercicio</th>
@@ -201,9 +225,10 @@ export const ProgressPage: React.FC = () => {
                 <tbody>
                   {progress.map((entry, index) => (
                     <tr key={index} className="border-t border-[#4A4A4A]">
+                      <td className="p-2 text-[#FFFFFF] truncate">{routines[entry.routineIndex]?.name || "Rutina eliminada"}</td>
                       <td className="p-2 text-[#FFFFFF]">{new Date(entry.date).toLocaleDateString()}</td>
-                      <td className="p-2 text-[#FFFFFF] truncate">{routine.routine[entry.dayIndex].day}</td>
-                      <td className="p-2 text-[#FFFFFF] truncate">{routine.routine[entry.dayIndex].exercises[entry.exerciseIndex].name}</td>
+                      <td className="p-2 text-[#FFFFFF] truncate">{routines[entry.routineIndex]?.routine[entry.dayIndex]?.day || "-"}</td>
+                      <td className="p-2 text-[#FFFFFF] truncate">{routines[entry.routineIndex]?.routine[entry.dayIndex]?.exercises[entry.exerciseIndex]?.name || "-"}</td>
                       {editIndex === index ? (
                         <>
                           <td className="p-2">

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchRoutine, clearRoutine } from "../../slices/routine/routineSlice";
+import { fetchRoutine, clearRoutines } from "../../slices/routine/routineSlice";
 import { RootState, AppDispatch } from "../../slices/store";
 import { useNavigate } from "react-router-dom";
 
@@ -9,6 +9,8 @@ interface FormData {
   goal: string;
   days: string;
   equipment: string;
+  name: string;
+  notes: string; // Nuevo campo para notas del usuario
 }
 
 export const FormPage: React.FC = () => {
@@ -17,13 +19,15 @@ export const FormPage: React.FC = () => {
     goal: "",
     days: "",
     equipment: "",
+    name: "",
+    notes: "",
   });
 
   const dispatch = useDispatch<AppDispatch>();
-  const { routine, loading, error } = useSelector((state: RootState) => state.routine);
+  const { routines, loading, error } = useSelector((state: RootState) => state.routine);
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -37,8 +41,8 @@ export const FormPage: React.FC = () => {
   };
 
   const handleClear = () => {
-    dispatch(clearRoutine());
-    setFormData({ level: "", goal: "", days: "", equipment: "" });
+    dispatch(clearRoutines());
+    setFormData({ level: "", goal: "", days: "", equipment: "", name: "", notes: "" });
   };
 
   return (
@@ -46,6 +50,13 @@ export const FormPage: React.FC = () => {
       <div className="p-4 max-w-md mx-auto flex-1">
         <h2 className="text-sm font-sans font-semibold text-white mb-4 truncate">Datos Iniciales</h2>
         <form onSubmit={handleSubmit} className="space-y-2">
+          <input
+            name="name"
+            placeholder="Nombre de la rutina (ej. Rutina de Fuerza)"
+            value={formData.name}
+            onChange={handleChange}
+            className="w-full p-2 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+          />
           <input
             name="level"
             placeholder="Nivel (principiante/intermedio/avanzado)"
@@ -74,6 +85,13 @@ export const FormPage: React.FC = () => {
             onChange={handleChange}
             className="w-full p-2 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
           />
+          <textarea
+            name="notes"
+            placeholder="Notas o peticiones (ej. Prefiero ejercicios sin máquinas)"
+            value={formData.notes}
+            onChange={handleChange}
+            className="w-full p-2 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] h-16 resize-none focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+          />
           <button
             type="submit"
             disabled={loading}
@@ -89,15 +107,15 @@ export const FormPage: React.FC = () => {
           </div>
         )}
 
-        {routine && !loading && (
+        {routines.length > 0 && !loading && (
           <div className="mt-4">
-            <h3 className="text-sm font-sans font-semibold text-white mb-2 truncate">Tu Rutina Personalizada</h3>
-            <p className="text-[#B0B0B0] text-xs">Rutina generada. Redirigiendo a la página de detalles...</p>
+            <h3 className="text-sm font-sans font-semibold text-white mb-2 truncate">Rutinas Generadas</h3>
+            <p className="text-[#B0B0B0] text-xs">Total de rutinas: {routines.length}</p>
             <button
               onClick={handleClear}
               className="mt-2 w-full bg-white text-black py-1 rounded hover:bg-[#E0E0E0] transition-colors text-xs shadow-sm"
             >
-              Limpiar Rutina
+              Limpiar Todas las Rutinas
             </button>
           </div>
         )}

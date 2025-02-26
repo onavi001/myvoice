@@ -9,8 +9,8 @@ interface RoutineExercise {
   weight: string;
   rest: string;
   notes?: string;
-  videoUrl?: string; // Nuevo campo para almacenar el URL del video
-  tips: string[];
+  videoUrl?: string;
+  tips?: string[];
 }
 
 interface RoutineDay {
@@ -22,18 +22,23 @@ interface RoutineDay {
 }
 
 interface Routine {
+  name: string;
   routine: RoutineDay[];
 }
 
 interface RoutineState {
-  routine: Routine | null;
+  routines: Routine[];
+  selectedRoutineIndex: number | null;
   loading: boolean;
   error: string | null;
 }
 
 const initialState: RoutineState = {
-  routine: localStorage.getItem("routine")
-    ? JSON.parse(localStorage.getItem("routine") as string)
+  routines: localStorage.getItem("routines")
+    ? JSON.parse(localStorage.getItem("routines") as string)
+    : [],
+  selectedRoutineIndex: localStorage.getItem("selectedRoutineIndex")
+    ? Number(localStorage.getItem("selectedRoutineIndex"))
     : null,
   loading: false,
   error: null,
@@ -42,11 +47,11 @@ const initialState: RoutineState = {
 export const fetchRoutine = createAsyncThunk(
   "routine/fetchRoutine",
   async (
-    formData: { level: string; goal: string; days: string; equipment: string },
+    formData: { level: string; goal: string; days: string; equipment: string; name?: string; notes?: string },
     { rejectWithValue }
   ) => {
     try {
-      return defaultResponse as unknown as Routine;
+      return defaultResponse[0] as unknown as Routine;
       const response = await fetch("/.netlify/functions/generateRoutine", {
         method: "POST",
         headers: {
@@ -59,8 +64,8 @@ export const fetchRoutine = createAsyncThunk(
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
-      const routine: Routine = await response.json();
-      return routine;
+      const routine: RoutineDay[] = (await response.json()).routine;
+      return { name: formData.name || "Rutina sin nombre", routine };
     } catch (err) {
       return rejectWithValue(err instanceof Error ? err.message : "Error desconocido");
     }
@@ -71,41 +76,49 @@ const routineSlice = createSlice({
   name: "routine",
   initialState,
   reducers: {
-    clearRoutine(state) {
-      state.routine = null;
+    clearRoutines(state) {
+      state.routines = [];
+      state.selectedRoutineIndex = null;
       state.error = null;
-      localStorage.removeItem("routine");
+      localStorage.removeItem("routines");
+      localStorage.removeItem("selectedRoutineIndex");
+    },
+    selectRoutine(state, action: PayloadAction<number>) {
+      state.selectedRoutineIndex = action.payload;
+      localStorage.setItem("selectedRoutineIndex", action.payload.toString());
     },
     updateExercise(
       state,
       action: PayloadAction<{
+        routineIndex: number;
         dayIndex: number;
         exerciseIndex: number;
         updatedExercise: Partial<RoutineExercise>;
       }>
     ) {
-      if (state.routine) {
-        const { dayIndex, exerciseIndex, updatedExercise } = action.payload;
-        const exercise = state.routine.routine[dayIndex].exercises[exerciseIndex];
-        state.routine.routine[dayIndex].exercises[exerciseIndex] = {
+      const { routineIndex, dayIndex, exerciseIndex, updatedExercise } = action.payload;
+      if (state.routines[routineIndex]) {
+        const exercise = state.routines[routineIndex].routine[dayIndex].exercises[exerciseIndex];
+        state.routines[routineIndex].routine[dayIndex].exercises[exerciseIndex] = {
           ...exercise,
           ...updatedExercise,
         };
-        localStorage.setItem("routine", JSON.stringify(state.routine));
+        localStorage.setItem("routines", JSON.stringify(state.routines));
       }
     },
     setExerciseVideo(
       state,
       action: PayloadAction<{
+        routineIndex: number;
         dayIndex: number;
         exerciseIndex: number;
         videoUrl: string;
       }>
     ) {
-      if (state.routine) {
-        const { dayIndex, exerciseIndex, videoUrl } = action.payload;
-        state.routine.routine[dayIndex].exercises[exerciseIndex].videoUrl = videoUrl;
-        localStorage.setItem("routine", JSON.stringify(state.routine));
+      const { routineIndex, dayIndex, exerciseIndex, videoUrl } = action.payload;
+      if (state.routines[routineIndex]) {
+        state.routines[routineIndex].routine[dayIndex].exercises[exerciseIndex].videoUrl = videoUrl;
+        localStorage.setItem("routines", JSON.stringify(state.routines));
       }
     },
   },
@@ -117,8 +130,10 @@ const routineSlice = createSlice({
       })
       .addCase(fetchRoutine.fulfilled, (state, action: PayloadAction<Routine>) => {
         state.loading = false;
-        state.routine = action.payload;
-        localStorage.setItem("routine", JSON.stringify(action.payload));
+        state.routines.push(action.payload);
+        state.selectedRoutineIndex = state.routines.length - 1;
+        localStorage.setItem("routines", JSON.stringify(state.routines));
+        localStorage.setItem("selectedRoutineIndex", state.selectedRoutineIndex.toString());
       })
       .addCase(fetchRoutine.rejected, (state, action) => {
         state.loading = false;
@@ -127,5 +142,5 @@ const routineSlice = createSlice({
   },
 });
 
-export const { clearRoutine, updateExercise, setExerciseVideo } = routineSlice.actions;
+export const { clearRoutines, selectRoutine, updateExercise, setExerciseVideo } = routineSlice.actions;
 export default routineSlice.reducer;

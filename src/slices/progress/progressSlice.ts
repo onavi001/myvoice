@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface ProgressEntry {
+  routineIndex: number;
   dayIndex: number;
   exerciseIndex: number;
   sets: number;
@@ -24,42 +25,16 @@ const progressSlice = createSlice({
   name: "progress",
   initialState,
   reducers: {
-    addProgress(
-      state,
-      action: PayloadAction<{
-        dayIndex: number;
-        exerciseIndex: number;
-        sets: number;
-        reps: number;
-        weight: string;
-        notes: string;
-      }>
-    ) {
-      const { dayIndex, exerciseIndex, sets, reps, weight, notes } = action.payload;
-      const newEntry: ProgressEntry = {
-        dayIndex,
-        exerciseIndex,
-        sets,
-        reps,
-        weight,
-        notes,
-        date: new Date().toISOString(),
-      };
-      state.progress.push(newEntry);
+    addProgress(state, action: PayloadAction<ProgressEntry>) {
+      state.progress.push(action.payload);
       localStorage.setItem("progress", JSON.stringify(state.progress));
     },
     updateProgress(
       state,
-      action: PayloadAction<{
-        index: number;
-        updatedEntry: Partial<ProgressEntry>;
-      }>
+      action: PayloadAction<{ index: number; updatedEntry: Partial<ProgressEntry> }>
     ) {
       const { index, updatedEntry } = action.payload;
-      state.progress[index] = {
-        ...state.progress[index],
-        ...updatedEntry,
-      };
+      state.progress[index] = { ...state.progress[index], ...updatedEntry };
       localStorage.setItem("progress", JSON.stringify(state.progress));
     },
     clearProgress(state) {

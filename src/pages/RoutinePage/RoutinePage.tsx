@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "../../slices/store";
-import { updateExercise, setExerciseVideo } from "../../slices/routine/routineSlice";
+import { updateExercise, setExerciseVideo, selectRoutine } from "../../slices/routine/routineSlice";
 import { addProgress } from "../../slices/progress/progressSlice";
 import { useNavigate } from "react-router-dom";
 
 export const RoutinePage: React.FC = () => {
-  const { routine } = useSelector((state: RootState) => state.routine);
+  const { routines, selectedRoutineIndex } = useSelector((state: RootState) => state.routine);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
@@ -20,7 +20,7 @@ export const RoutinePage: React.FC = () => {
   const handleBack = () => navigate("/");
   const handleProgress = () => navigate("/progress");
 
-  const fetchExerciseVideo = async (exerciseName: string, dayIndex: number, exerciseIndex: number) => {
+  const fetchExerciseVideo = async (exerciseName: string, routineIndex: number, dayIndex: number, exerciseIndex: number) => {
     setLoadingVideos((prev) => ({ ...prev, [exerciseIndex]: true }));
     try {
       const response = await fetch(
@@ -32,7 +32,7 @@ export const RoutinePage: React.FC = () => {
       if (data.items && data.items.length > 0) {
         const videoId = data.items[0].id.videoId;
         const url = `https://www.youtube.com/embed/${videoId}`;
-        dispatch(setExerciseVideo({ dayIndex, exerciseIndex, videoUrl: url }));
+        dispatch(setExerciseVideo({ routineIndex, dayIndex, exerciseIndex, videoUrl: url }));
       }
     } catch (error) {
       console.error("Error fetching YouTube video:", error);
@@ -48,9 +48,11 @@ export const RoutinePage: React.FC = () => {
       [exerciseIndex]: isExpanding,
     }));
 
-    const exercise = routine!.routine[selectedDayIndex].exercises[exerciseIndex];
-    if (isExpanding && !exercise.videoUrl) {
-      fetchExerciseVideo(exerciseName, selectedDayIndex, exerciseIndex);
+    if (selectedRoutineIndex !== null) {
+      const exercise = routines[selectedRoutineIndex].routine[selectedDayIndex].exercises[exerciseIndex];
+      if (isExpanding && !exercise.videoUrl) {
+        fetchExerciseVideo(exerciseName, selectedRoutineIndex, selectedDayIndex, exerciseIndex);
+      }
     }
   };
 
@@ -60,41 +62,46 @@ export const RoutinePage: React.FC = () => {
     field: string,
     value: string | number
   ) => {
-    const key = `${dayIndex}-${exerciseIndex}`;
-    setEditData((prev) => ({
-      ...prev,
-      [key]: { ...prev[key] || {}, [field]: value },
-    }));
-  };
-
-  const handleSave = (dayIndex: number, exerciseIndex: number) => {
-    const key = `${dayIndex}-${exerciseIndex}`;
-    const updatedExercise = editData[key];
-    if (updatedExercise) {
-      dispatch(updateExercise({ dayIndex, exerciseIndex, updatedExercise }));
-      const currentExercise = routine!.routine[dayIndex].exercises[exerciseIndex];
-      dispatch(addProgress({
-        dayIndex,
-        exerciseIndex,
-        sets: Number(updatedExercise.sets || currentExercise.sets),
-        reps: Number(updatedExercise.reps || currentExercise.reps),
-        weight: updatedExercise.weight || currentExercise.weight,
-        notes: updatedExercise.notes || currentExercise.notes || "",
+    if (selectedRoutineIndex !== null) {
+      const key = `${dayIndex}-${exerciseIndex}`;
+      setEditData((prev) => ({
+        ...prev,
+        [key]: { ...prev[key] || {}, [field]: value },
       }));
-      setEditData((prev) => {
-        const newData = { ...prev };
-        delete newData[key];
-        return newData;
-      });
     }
   };
 
-  if (!routine) {
+  const handleSave = (dayIndex: number, exerciseIndex: number) => {
+    if (selectedRoutineIndex !== null) {
+      const key = `${dayIndex}-${exerciseIndex}`;
+      const updatedExercise = editData[key];
+      if (updatedExercise) {
+        dispatch(updateExercise({ routineIndex: selectedRoutineIndex, dayIndex, exerciseIndex, updatedExercise }));
+        const currentExercise = routines[selectedRoutineIndex].routine[dayIndex].exercises[exerciseIndex];
+        dispatch(addProgress({
+          dayIndex,
+          exerciseIndex,
+          sets: Number(updatedExercise.sets || currentExercise.sets),
+          reps: Number(updatedExercise.reps || currentExercise.reps),
+          weight: updatedExercise.weight || currentExercise.weight,
+          notes: updatedExercise.notes || currentExercise.notes || "",
+          ...updatedExercise,
+        }));
+        setEditData((prev) => {
+          const newData = { ...prev };
+          delete newData[key];
+          return newData;
+        });
+      }
+    }
+  };
+
+  if (routines.length === 0) {
     return (
       <div className="min-h-screen bg-[#1A1A1A] text-white">
         <div className="p-4 max-w-md mx-auto">
           <h2 className="text-sm font-sans font-semibold text-white mb-3 truncate">Tu Rutina</h2>
-          <p className="text-[#B0B0B0] text-xs">No hay rutina generada. Genera una desde la página principal.</p>
+          <p className="text-[#B0B0B0] text-xs">No hay rutinas generadas. Genera una desde la página principal.</p>
           <button
             onClick={handleBack}
             className="mt-3 w-full bg-white text-black py-1 rounded hover:bg-[#E0E0E0] transition-colors text-xs shadow-sm"
@@ -106,28 +113,64 @@ export const RoutinePage: React.FC = () => {
     );
   }
 
-  const selectedDay = routine.routine[selectedDayIndex];
+  if (selectedRoutineIndex === null || !routines[selectedRoutineIndex]) {
+    return (
+      <div className="min-h-screen bg-[#1A1A1A] text-white">
+        <div className="p-4 max-w-md mx-auto">
+          <h2 className="text-sm font-sans font-semibold text-white mb-3 truncate">Tu Rutina</h2>
+          <p className="text-[#B0B0B0] text-xs">Selecciona una rutina para ver los detalles.</p>
+          <button
+            onClick={handleBack}
+            className="mt-3 w-full bg-white text-black py-1 rounded hover:bg-[#E0E0E0] transition-colors text-xs shadow-sm"
+          >
+            Volver
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const selectedRoutine = routines[selectedRoutineIndex];
+  const selectedDay = selectedRoutine.routine[selectedDayIndex];
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] text-white flex flex-col">
       <style>
         {`
-          /* Ocultar scrollbar pero permitir scroll */
           .scrollbar-hidden::-webkit-scrollbar {
             display: none;
           }
           .scrollbar-hidden {
-            -ms-overflow-style: none; /* IE y Edge */
-            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
           }
         `}
       </style>
       <div className="p-4 max-w-full mx-auto flex-1">
-        <h2 className="text-sm font-sans font-semibold text-white mb-4 truncate">Tu Rutina</h2>
+        {/* Selector de rutinas */}
+        <div className="flex overflow-x-auto space-x-2 mb-4 scrollbar-hidden">
+          {routines.map((routine, index) => (
+            <button
+              key={index}
+              onClick={() => {
+                dispatch(selectRoutine(index));
+                setSelectedDayIndex(0); // Resetear el día al cambiar de rutina
+                setExpandedExercises({});
+              }}
+              className={`px-2 py-1 rounded-full text-xs font-sans font-medium transition-colors shadow-sm truncate max-w-[120px] ${
+                selectedRoutineIndex === index
+                  ? "bg-white text-black"
+                  : "bg-[#2D2D2D] text-[#B0B0B0] hover:bg-[#4A4A4A]"
+              }`}
+            >
+              {routine.name}
+            </button>
+          ))}
+        </div>
 
         {/* Tabs de días con scroll interno */}
         <div className="flex overflow-x-auto space-x-2 mb-4 scrollbar-hidden">
-          {routine.routine.map((day, index) => (
+          {selectedRoutine.routine.map((day, index) => (
             <button
               key={index}
               onClick={() => setSelectedDayIndex(index)}
@@ -142,19 +185,17 @@ export const RoutinePage: React.FC = () => {
           ))}
         </div>
 
-        {/* Detalles del día con scroll interno */}
+        {/* Detalles del día con scroll interno y alineación vertical */}
         <div className="bg-[#2D2D2D] p-2 rounded-lg shadow-sm mb-4 max-h-24 overflow-y-auto scrollbar-hidden">
-          <div className="flex items-center mb-1">
-            <span className="text-[#B0B0B0] font-semibold text-xs mr-2">🏋️ Músculos:</span>
-            <span className="text-[#FFFFFF] text-xs">{selectedDay.musclesWorked.join(", ")}</span>
-          </div>
-          <div className="flex items-start">
-            <span className="text-[#B0B0B0] font-semibold text-xs mr-2">🔥 Calentamiento:</span>
-            <ul className="list-disc pl-4 text-[#FFFFFF] text-xs">
-              {selectedDay.warmUpOptions.map((option, index) => (
-                <li key={index} className="truncate">{option}</li>
-              ))}
-            </ul>
+          <div className="flex flex-col space-y-1">
+            <div className="flex items-center">
+              <span className="text-[#B0B0B0] font-semibold text-xs min-w-[100px]">🏋️ Músculos:</span>
+              <span className="text-[#FFFFFF] text-xs flex-1">{selectedDay.musclesWorked.join(", ")}</span>
+            </div>
+            <div className="flex items-center">
+              <span className="text-[#B0B0B0] font-semibold text-xs min-w-[100px]">🔥 Calentamiento:</span>
+              <span className="text-[#FFFFFF] text-xs flex-1">{selectedDay.warmUpOptions.join(", ")}</span>
+            </div>
           </div>
         </div>
 
@@ -186,14 +227,14 @@ export const RoutinePage: React.FC = () => {
                     <div className="grid grid-cols-2 gap-1">
                       <div>
                         <span className="text-[#B0B0B0] font-semibold">Músculo:</span>
-                        <p className="text-[#FFFFFF] truncate">{currentExercise.muscle_group}</p>
+                        <p className="text-[#FFFFFF]">{currentExercise.muscle_group}</p>
                       </div>
                       {currentExercise.tips && currentExercise.tips.length > 0 && (
                         <div>
                           <span className="text-[#B0B0B0] font-semibold">Consejos:</span>
                           <ul className="list-disc pl-3 text-[#FFFFFF] max-w-full">
-                            {currentExercise.tips.map((tip:string, index:number) => (
-                              <li key={index} className="truncate">{tip}</li>
+                            {currentExercise.tips.map((tip: string, index: number) => (
+                              <li key={index} className="">{tip}</li>
                             ))}
                           </ul>
                         </div>
