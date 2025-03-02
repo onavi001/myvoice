@@ -17,7 +17,7 @@
     "@hookform/resolvers": "^4.1.0",
     "@reduxjs/toolkit": "^2.5.1",
     "@tailwindcss/vite": "^4.0.7",
-    "chart.js": "^4.4.7",
+    "chart.js": "^4.4.8",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "firebase": "^11.3.1",
