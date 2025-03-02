@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { fetchRoutine, clearRoutines } from "../../slices/routine/routineSlice";
 import { RootState, AppDispatch } from "../../slices/store";
 import { useNavigate } from "react-router-dom";
+import Loader from "../../components/Loader";
 
 interface FormData {
   level: string;
@@ -99,9 +100,9 @@ export const FormPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#34C759] text-black py-2 rounded hover:bg-[#2DBF4E] transition-colors disabled:bg-[#4A4A4A] disabled:text-[#B0B0B0] text-xs shadow-sm"
+            className={`w-full bg-[${loading ? `#4A4A4A`:`#34C759`}] text-black py-2 rounded hover:bg-[#2DBF4E] transition-colors disabled:bg-[#4A4A4A] disabled:text-[#B0B0B0] text-xs shadow-sm`}
           >
-            {loading ? "Generando..." : "Generar Rutina"}
+            {loading ? <Loader /> : "Generar Rutina"}
           </button>
           <button
             type="button"

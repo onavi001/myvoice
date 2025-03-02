@@ -4,6 +4,7 @@ import { RootState, AppDispatch } from "../../slices/store";
 import { updateExercise, setExerciseVideo, selectRoutine, deleteRoutine } from "../../slices/routine/routineSlice";
 import { addProgress } from "../../slices/progress/progressSlice";
 import { useNavigate } from "react-router-dom";
+import Loader from "../../components/Loader";
 
 export const RoutinePage: React.FC = () => {
   const { routines, selectedRoutineIndex } = useSelector((state: RootState) => state.routine);
@@ -275,7 +276,10 @@ export const RoutinePage: React.FC = () => {
                         allowFullScreen
                       />
                     ) : isLoading ? (
-                      <p className="text-[#B0B0B0] italic text-center">Buscando video...</p>
+                      <div className="text-center">
+                        <Loader />
+                        <p className="text-[#B0B0B0] italic">Cargando video...</p>
+                      </div>
                     ) : (
                       <p className="text-[#B0B0B0] italic text-center">Video no disponible</p>
                     )}
