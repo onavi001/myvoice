@@ -5,6 +5,7 @@ import { updateExercise, setExerciseVideo, selectRoutine, deleteRoutine } from "
 import { addProgress } from "../../slices/progress/progressSlice";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/Loader";
+import Toast from "../../components/Toast"; // Importa el componente Toast
 
 export const RoutinePage: React.FC = () => {
   const { routines, selectedRoutineIndex } = useSelector((state: RootState) => state.routine);
@@ -15,8 +16,9 @@ export const RoutinePage: React.FC = () => {
   const [expandedExercises, setExpandedExercises] = useState<Record<number, boolean>>({});
   const [editData, setEditData] = useState<Record<string, any>>({});
   const [loadingVideos, setLoadingVideos] = useState<Record<number, boolean>>({});
+  const [toastMessage, setToastMessage] = useState<string | null>(null); // Estado para la notificación
 
-  const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
+  const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || "TU_CLAVE_API_YOUTUBE";
 
   const handleBack = () => navigate("/");
   const handleProgress = () => navigate("/progress");
@@ -90,7 +92,7 @@ export const RoutinePage: React.FC = () => {
       if (updatedExercise) {
         dispatch(updateExercise({ routineIndex: selectedRoutineIndex, dayIndex, exerciseIndex, updatedExercise }));
         const currentExercise = routines[selectedRoutineIndex].routine[dayIndex].exercises[exerciseIndex];
-        dispatch(addProgress({
+        const progressData = {
           routineIndex: selectedRoutineIndex,
           dayIndex,
           exerciseIndex,
@@ -99,8 +101,9 @@ export const RoutinePage: React.FC = () => {
           weight: updatedExercise.weight || currentExercise.weight,
           notes: updatedExercise.notes || currentExercise.notes || "",
           date: new Date().toISOString(),
-          ...updatedExercise,
-        }));
+        };
+        dispatch(addProgress(progressData));
+        setToastMessage("Progreso guardado correctamente"); // Mostrar notificación
         setEditData((prev) => {
           const newData = { ...prev };
           delete newData[key];
@@ -108,6 +111,10 @@ export const RoutinePage: React.FC = () => {
         });
       }
     }
+  };
+
+  const handleCloseToast = () => {
+    setToastMessage(null);
   };
 
   if (routines.length === 0) {
@@ -194,7 +201,7 @@ export const RoutinePage: React.FC = () => {
           ))}
         </div>
 
-        {/* Tabs de días con scroll interno */}
+        {/* Tabs de días */}
         <div className="flex overflow-x-auto space-x-2 mb-4 scrollbar-hidden">
           {selectedRoutine.routine.map((day, index) => (
             <button
@@ -211,7 +218,7 @@ export const RoutinePage: React.FC = () => {
           ))}
         </div>
 
-        {/* Detalles del día con scroll interno y alineación vertical */}
+        {/* Detalles del día */}
         <div className="bg-[#2D2D2D] p-2 rounded-lg shadow-sm mb-4 max-h-24 overflow-y-auto scrollbar-hidden">
           <div className="flex flex-col space-y-1">
             <div className="flex items-center">
@@ -378,6 +385,9 @@ export const RoutinePage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Notificación Toast */}
+      {toastMessage && <Toast message={toastMessage} onClose={handleCloseToast} />}
     </div>
   );
 };
