@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "../../slices/store";
-import { updateExercise, setExerciseVideo, selectRoutine, deleteRoutine } from "../../slices/routine/routineSlice";
+import {
+  updateExercise,
+  setExerciseVideo,
+  selectRoutine,
+  deleteRoutine,
+  changeExerciseVideoIndex,
+} from "../../slices/routine/routineSlice";
 import { addProgress } from "../../slices/progress/progressSlice";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/Loader";
@@ -22,10 +28,10 @@ export const RoutinePage: React.FC = () => {
 
   const handleBack = () => navigate("/");
   const handleProgress = () => navigate("/progress");
-  const handleAddRoutine = () => navigate("add-routine");
+  const handleAddRoutine = () => navigate("/routine/add-routine");
   const handleEditRoutine = () => {
     if (selectedRoutineIndex !== null) {
-      navigate(`edit-routine/${selectedRoutineIndex}`);
+      navigate(`/routine/edit-routine/${selectedRoutineIndex}`);
     }
   };
   const handleDeleteRoutine = () => {
@@ -40,13 +46,12 @@ export const RoutinePage: React.FC = () => {
       const response = await fetch(
         `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
           `${exerciseName} exercise technique muscles`
-        )}&type=video&maxResults=1&key=${YOUTUBE_API_KEY}`
+        )}&type=video&maxResults=5&key=${YOUTUBE_API_KEY}` // Obtener 5 videos
       );
       const data = await response.json();
       if (data.items && data.items.length > 0) {
-        const videoId = data.items[0].id.videoId;
-        const url = `https://www.youtube.com/embed/${videoId}`;
-        dispatch(setExerciseVideo({ routineIndex, dayIndex, exerciseIndex, videoUrl: url }));
+        const videoUrls = data.items.map((item: any) => `https://www.youtube.com/embed/${item.id.videoId}`);
+        dispatch(setExerciseVideo({ routineIndex, dayIndex, exerciseIndex, videoUrls }));
       }
     } catch (error) {
       console.error("Error fetching YouTube video:", error);
@@ -64,7 +69,7 @@ export const RoutinePage: React.FC = () => {
 
     if (selectedRoutineIndex !== null) {
       const exercise = routines[selectedRoutineIndex].routine[selectedDayIndex].exercises[exerciseIndex];
-      if (isExpanding && !exercise.videoUrl) {
+      if (isExpanding && (!exercise.videoUrls || exercise.videoUrls.length === 0)) {
         fetchExerciseVideo(exerciseName, selectedRoutineIndex, selectedDayIndex, exerciseIndex);
       }
     }
@@ -92,7 +97,7 @@ export const RoutinePage: React.FC = () => {
       if (updatedExercise) {
         dispatch(updateExercise({ routineIndex: selectedRoutineIndex, dayIndex, exerciseIndex, updatedExercise }));
         const currentExercise = routines[selectedRoutineIndex].routine[dayIndex].exercises[exerciseIndex];
-        const progressData = {
+        dispatch(addProgress({
           routineIndex: selectedRoutineIndex,
           dayIndex,
           exerciseIndex,
@@ -101,8 +106,8 @@ export const RoutinePage: React.FC = () => {
           weight: updatedExercise.weight || currentExercise.weight,
           notes: updatedExercise.notes || currentExercise.notes || "",
           date: new Date().toISOString(),
-        };
-        dispatch(addProgress(progressData));
+          ...updatedExercise,
+        }));
         setToastMessage("Progreso guardado correctamente");
         setEditData((prev) => {
           const newData = { ...prev };
@@ -111,6 +116,10 @@ export const RoutinePage: React.FC = () => {
         });
       }
     }
+  };
+
+  const handleChangeVideo = (direction: "next" | "prev", routineIndex: number, dayIndex: number, exerciseIndex: number) => {
+    dispatch(changeExerciseVideoIndex({ routineIndex, dayIndex, exerciseIndex, direction }));
   };
 
   const handleCloseToast = () => {
@@ -201,7 +210,7 @@ export const RoutinePage: React.FC = () => {
           ))}
         </div>
 
-        {/* Tabs de días */}
+        {/* Tabs de días con scroll interno */}
         <div className="flex overflow-x-auto space-x-2 mb-4 scrollbar-hidden">
           {selectedRoutine.routine.map((day, index) => (
             <button
@@ -273,15 +282,33 @@ export const RoutinePage: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    {currentExercise.videoUrl ? (
-                      <iframe
-                        src={currentExercise.videoUrl}
-                        title={`Demostración de ${exercise.name}`}
-                        className="w-full h-32 rounded border border-[#4A4A4A]"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
+                    {currentExercise.videoUrls && currentExercise.videoUrls.length > 0 ? (
+                      <div>
+                        <iframe
+                          src={currentExercise.videoUrls[currentExercise.currentVideoIndex || 0]}
+                          title={`Demostración de ${exercise.name}`}
+                          className="w-full h-32 rounded border border-[#4A4A4A]"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                        {currentExercise.videoUrls.length > 1 && (
+                          <div className="flex justify-between mt-2">
+                            <button
+                              onClick={() => handleChangeVideo("prev", selectedRoutineIndex, selectedDayIndex, exerciseIndex)}
+                              className="bg-[#4A4A4A] text-[#B0B0B0] px-2 py-1 rounded text-xs hover:bg-[#5A5A5A]"
+                            >
+                              Anterior
+                            </button>
+                            <button
+                              onClick={() => handleChangeVideo("next", selectedRoutineIndex, selectedDayIndex, exerciseIndex)}
+                              className="bg-[#4A4A4A] text-[#B0B0B0] px-2 py-1 rounded text-xs hover:bg-[#5A5A5A]"
+                            >
+                              Siguiente
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     ) : isLoading ? (
                       <div className="text-center">
                         <Loader />

@@ -9,7 +9,8 @@ interface RoutineExercise {
   weight: string;
   rest: string;
   notes?: string;
-  videoUrl?: string;
+  videoUrls?: string[];
+  currentVideoIndex?: number;
   tips?: string[];
 }
 
@@ -22,6 +23,7 @@ interface RoutineDay {
 }
 
 interface Routine {
+  id?: number;
   name: string;
   routine: RoutineDay[];
 }
@@ -33,13 +35,19 @@ interface RoutineState {
   error: string | null;
 }
 
+const loadRoutinesFromStorage = (): Routine[] => {
+  const storedRoutines = localStorage.getItem("routines");
+  return storedRoutines ? JSON.parse(storedRoutines) : [];
+};
+
+const loadSelectedRoutineIndexFromStorage = (): number | null => {
+  const storedIndex = localStorage.getItem("selectedRoutineIndex");
+  return storedIndex !== null ? Number(storedIndex) : null;
+};
+
 const initialState: RoutineState = {
-  routines: localStorage.getItem("routines")
-    ? JSON.parse(localStorage.getItem("routines") as string)
-    : [],
-  selectedRoutineIndex: localStorage.getItem("selectedRoutineIndex")
-    ? Number(localStorage.getItem("selectedRoutineIndex"))
-    : null,
+  routines: loadRoutinesFromStorage(),
+  selectedRoutineIndex: loadSelectedRoutineIndexFromStorage(),
   loading: false,
   error: null,
 };
@@ -82,18 +90,18 @@ const routineSlice = createSlice({
       state.routines = [];
       state.selectedRoutineIndex = null;
       state.error = null;
-      localStorage.removeItem("routines");
-      localStorage.removeItem("selectedRoutineIndex");
+      localStorage.setItem("routines", JSON.stringify([]));
+      localStorage.setItem("selectedRoutineIndex", JSON.stringify(null));
     },
     selectRoutine(state, action: PayloadAction<number>) {
       state.selectedRoutineIndex = action.payload;
-      localStorage.setItem("selectedRoutineIndex", action.payload.toString());
+      localStorage.setItem("selectedRoutineIndex", JSON.stringify(action.payload));
     },
     addRoutine(state, action: PayloadAction<Routine>) {
       state.routines.push(action.payload);
       state.selectedRoutineIndex = state.routines.length - 1;
       localStorage.setItem("routines", JSON.stringify(state.routines));
-      localStorage.setItem("selectedRoutineIndex", state.selectedRoutineIndex.toString());
+      localStorage.setItem("selectedRoutineIndex", JSON.stringify(state.selectedRoutineIndex));
     },
     editRoutine(state, action: PayloadAction<{ routineIndex: number; updatedRoutine: Routine }>) {
       const { routineIndex, updatedRoutine } = action.payload;
@@ -113,10 +121,7 @@ const routineSlice = createSlice({
         state.selectedRoutineIndex -= 1;
       }
       localStorage.setItem("routines", JSON.stringify(state.routines));
-      localStorage.setItem(
-        "selectedRoutineIndex",
-        state.selectedRoutineIndex !== null ? state.selectedRoutineIndex.toString() : ""
-      );
+      localStorage.setItem("selectedRoutineIndex", JSON.stringify(state.selectedRoutineIndex));
     },
     updateExercise(
       state,
@@ -143,12 +148,35 @@ const routineSlice = createSlice({
         routineIndex: number;
         dayIndex: number;
         exerciseIndex: number;
-        videoUrl: string;
+        videoUrls: string[];
+        currentVideoIndex?: number;
       }>
     ) {
-      const { routineIndex, dayIndex, exerciseIndex, videoUrl } = action.payload;
+      const { routineIndex, dayIndex, exerciseIndex, videoUrls, currentVideoIndex = 0 } = action.payload;
       if (state.routines[routineIndex]) {
-        state.routines[routineIndex].routine[dayIndex].exercises[exerciseIndex].videoUrl = videoUrl;
+        state.routines[routineIndex].routine[dayIndex].exercises[exerciseIndex].videoUrls = videoUrls;
+        state.routines[routineIndex].routine[dayIndex].exercises[exerciseIndex].currentVideoIndex = currentVideoIndex;
+        localStorage.setItem("routines", JSON.stringify(state.routines));
+      }
+    },
+    changeExerciseVideoIndex(
+      state,
+      action: PayloadAction<{
+        routineIndex: number;
+        dayIndex: number;
+        exerciseIndex: number;
+        direction: "next" | "prev";
+      }>
+    ) {
+      const { routineIndex, dayIndex, exerciseIndex, direction } = action.payload;
+      const exercise = state.routines[routineIndex]?.routine[dayIndex]?.exercises[exerciseIndex];
+      if (exercise && exercise.videoUrls && exercise.videoUrls.length > 0) {
+        const currentIndex = exercise.currentVideoIndex || 0;
+        const newIndex =
+          direction === "next"
+            ? (currentIndex + 1) % exercise.videoUrls.length
+            : (currentIndex - 1 + exercise.videoUrls.length) % exercise.videoUrls.length;
+        exercise.currentVideoIndex = newIndex;
         localStorage.setItem("routines", JSON.stringify(state.routines));
       }
     },
@@ -164,7 +192,7 @@ const routineSlice = createSlice({
         state.routines.push(action.payload);
         state.selectedRoutineIndex = state.routines.length - 1;
         localStorage.setItem("routines", JSON.stringify(state.routines));
-        localStorage.setItem("selectedRoutineIndex", state.selectedRoutineIndex.toString());
+        localStorage.setItem("selectedRoutineIndex", JSON.stringify(state.selectedRoutineIndex));
       })
       .addCase(fetchRoutine.rejected, (state, action) => {
         state.loading = false;
@@ -173,6 +201,15 @@ const routineSlice = createSlice({
   },
 });
 
-export const { clearRoutines, selectRoutine, addRoutine, editRoutine, deleteRoutine, updateExercise, setExerciseVideo } =
-  routineSlice.actions;
+export const {
+  clearRoutines,
+  selectRoutine,
+  addRoutine,
+  editRoutine,
+  deleteRoutine,
+  updateExercise,
+  setExerciseVideo,
+  changeExerciseVideoIndex,
+} = routineSlice.actions;
+
 export default routineSlice.reducer;
