@@ -15,7 +15,7 @@ export const RoutinePage: React.FC = () => {
   const [editData, setEditData] = useState<Record<string, any>>({});
   const [loadingVideos, setLoadingVideos] = useState<Record<number, boolean>>({});
 
-  const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || "TU_CLAVE_API_YOUTUBE";
+  const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 
   const handleBack = () => navigate("/");
   const handleProgress = () => navigate("/progress");
