@@ -33,15 +33,16 @@ export const RoutineFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { routineIndex } = useParams<{ routineIndex: string }>();
 
-  const isEditMode = !!routineIndex; // Determina si estamos editando o agregando
+  const isEditMode = !!routineIndex;
   const index = Number(routineIndex);
 
   const [formData, setFormData] = useState<RoutineForm>({
     name: "",
     days: [{ day: "", exercises: [], musclesWorked: [], warmUpOptions: [], explanation: "" }],
   });
+  const [expandedDay, setExpandedDay] = useState<number | null>(isEditMode ? 0 : null);
+  const [expandedExercises, setExpandedExercises] = useState<Record<number, number[]>>({});
 
-  // Cargar datos de la rutina existente si estamos en modo edición
   useEffect(() => {
     if (isEditMode && routines[index]) {
       const routine = routines[index];
@@ -94,6 +95,23 @@ export const RoutineFormPage: React.FC = () => {
       ...formData,
       days: [...formData.days, { day: "", exercises: [], musclesWorked: [], warmUpOptions: [], explanation: "" }],
     });
+    setExpandedDay(formData.days.length);
+  };
+
+  const deleteDay = (dayIndex: number) => {
+    if (formData.days.length <= 1) return; // No eliminar si solo queda un día
+    const updatedDays = formData.days.filter((_, idx) => idx !== dayIndex);
+    setFormData({ ...formData, days: updatedDays });
+    setExpandedDay((prev) => (prev === dayIndex ? null : prev > dayIndex ? prev - 1 : prev));
+    setExpandedExercises((prev) => {
+      const newExpanded = { ...prev };
+      delete newExpanded[dayIndex];
+      return Object.keys(newExpanded).reduce((acc, key) => {
+        const newKey = Number(key) > dayIndex ? Number(key) - 1 : Number(key);
+        acc[newKey] = newExpanded[key];
+        return acc;
+      }, {} as Record<number, number[]>);
+    });
   };
 
   const addExercise = (dayIndex: number) => {
@@ -108,6 +126,35 @@ export const RoutineFormPage: React.FC = () => {
       tips: ["", ""],
     });
     setFormData({ ...formData, days: updatedDays });
+    setExpandedExercises((prev) => ({
+      ...prev,
+      [dayIndex]: [...(prev[dayIndex] || []), updatedDays[dayIndex].exercises.length - 1],
+    }));
+  };
+
+  const deleteExercise = (dayIndex: number, exerciseIndex: number) => {
+    const updatedDays = [...formData.days];
+    updatedDays[dayIndex].exercises = updatedDays[dayIndex].exercises.filter((_, idx) => idx !== exerciseIndex);
+    setFormData({ ...formData, days: updatedDays });
+    setExpandedExercises((prev) => ({
+      ...prev,
+      [dayIndex]: (prev[dayIndex] || []).filter((idx) => idx !== exerciseIndex).map(idx => idx > exerciseIndex ? idx - 1 : idx),
+    }));
+  };
+
+  const toggleDay = (dayIndex: number) => {
+    setExpandedDay((prev) => (prev === dayIndex ? null : dayIndex));
+  };
+
+  const toggleExercise = (dayIndex: number, exerciseIndex: number) => {
+    setExpandedExercises((prev) => {
+      const dayExercises = prev[dayIndex] || [];
+      if (dayExercises.includes(exerciseIndex)) {
+        return { ...prev, [dayIndex]: dayExercises.filter((idx) => idx !== exerciseIndex) };
+      } else {
+        return { ...prev, [dayIndex]: [...dayExercises, exerciseIndex] };
+      }
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -141,11 +188,11 @@ export const RoutineFormPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] text-white flex flex-col">
-      <div className="p-4 max-w-md mx-auto flex-1">
+      <div className="p-4 max-w-md mx-auto flex-1 overflow-y-auto">
         <h2 className="text-sm font-sans font-semibold text-white mb-4 truncate">
           {isEditMode ? "Editar Rutina" : "Agregar Rutina Manual"}
         </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-2">
           <input
             name="name"
             placeholder="Nombre de la rutina"
@@ -153,119 +200,180 @@ export const RoutineFormPage: React.FC = () => {
             onChange={handleRoutineChange}
             className="w-full p-2 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
           />
-          {formData.days.map((day, dayIndex) => (
-            <div key={dayIndex} className="bg-[#2D2D2D] p-2 rounded-lg shadow-sm space-y-2">
-              <input
-                placeholder="Nombre del día (ej. Pecho y Tríceps)"
-                value={day.day}
-                onChange={(e) => handleDayChange(dayIndex, "day", e.target.value)}
-                className="w-full p-2 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
-              />
-              <div className="space-y-2">
-                {day.exercises.map((exercise, exerciseIndex) => (
-                  <div key={exerciseIndex} className="bg-[#4A4A4A] p-2 rounded-lg space-y-1">
-                    <input
-                      placeholder="Nombre del ejercicio"
-                      value={exercise.name}
-                      onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, "name", e.target.value)}
-                      className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
-                    />
-                    <input
-                      placeholder="Grupo muscular"
-                      value={exercise.muscle_group}
-                      onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, "muscle_group", e.target.value)}
-                      className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Series"
-                      value={exercise.sets || ""}
-                      onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, "sets", Number(e.target.value))}
-                      className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Repeticiones"
-                      value={exercise.reps || ""}
-                      onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, "reps", Number(e.target.value))}
-                      className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
-                    />
-                    <input
-                      placeholder="Peso (ej. 10-15kg)"
-                      value={exercise.weight}
-                      onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, "weight", e.target.value)}
-                      className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
-                    />
-                    <input
-                      placeholder="Descanso (ej. 60s)"
-                      value={exercise.rest}
-                      onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, "rest", e.target.value)}
-                      className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
-                    />
-                    <input
-                      placeholder="Consejo 1"
-                      value={exercise.tips[0] || ""}
-                      onChange={(e) => {
-                        const updatedTips = [...exercise.tips];
-                        updatedTips[0] = e.target.value;
-                        handleExerciseChange(dayIndex, exerciseIndex, "tips", updatedTips);
-                      }}
-                      className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
-                    />
-                    <input
-                      placeholder="Consejo 2"
-                      value={exercise.tips[1] || ""}
-                      onChange={(e) => {
-                        const updatedTips = [...exercise.tips];
-                        updatedTips[1] = e.target.value;
-                        handleExerciseChange(dayIndex, exerciseIndex, "tips", updatedTips);
-                      }}
-                      className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
-                    />
-                  </div>
-                ))}
+          {formData.days.map((day, dayIndex) => {
+            const isExpanded = expandedDay === dayIndex;
+            return (
+              <div
+                key={dayIndex}
+                className={`rounded-lg shadow-sm ${dayIndex % 2 === 0 ? "bg-[#2D2D2D]" : "bg-[#3A3A3A]"}`}
+              >
                 <button
                   type="button"
-                  onClick={() => addExercise(dayIndex)}
-                  className="w-full bg-[#34C759] text-black py-1 rounded hover:bg-[#2DBF4E] transition-colors text-xs shadow-sm"
+                  onClick={() => toggleDay(dayIndex)}
+                  className="w-full flex justify-between items-center p-2 text-left hover:bg-[#4A4A4A] transition-colors"
                 >
-                  Agregar Ejercicio
+                  <span className="text-xs font-semibold text-white truncate">
+                    {day.day || `Día ${dayIndex + 1}`}
+                  </span>
+                  <span className="text-[#B0B0B0] text-xs">{isExpanded ? "▲" : "▼"}</span>
                 </button>
+                {isExpanded && (
+                  <div className="p-2 space-y-2">
+                    <input
+                      placeholder="Nombre del día"
+                      value={day.day}
+                      onChange={(e) => handleDayChange(dayIndex, "day", e.target.value)}
+                      className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+                    />
+                    {day.exercises.map((exercise, exerciseIndex) => {
+                      const isExerciseExpanded = expandedExercises[dayIndex]?.includes(exerciseIndex);
+                      return (
+                        <div
+                          key={exerciseIndex}
+                          className={`rounded-lg ${exerciseIndex % 2 === 0 ? "bg-[#4A4A4A]" : "bg-[#5A5A5A]"}`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleExercise(dayIndex, exerciseIndex)}
+                            className="w-full flex justify-between items-center p-2 text-left hover:bg-[#6A6A6A] transition-colors"
+                          >
+                            <span className="text-xs font-semibold text-white truncate">
+                              {exercise.name || `Ejercicio ${exerciseIndex + 1}`}
+                            </span>
+                            <span className="text-[#B0B0B0] text-xs">{isExerciseExpanded ? "▲" : "▼"}</span>
+                          </button>
+                          {isExerciseExpanded && (
+                            <div className="p-2 space-y-1">
+                              <input
+                                placeholder="Nombre del ejercicio"
+                                value={exercise.name}
+                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, "name", e.target.value)}
+                                className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+                              />
+                              <input
+                                placeholder="Grupo muscular"
+                                value={exercise.muscle_group}
+                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, "muscle_group", e.target.value)}
+                                className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+                              />
+                              <input
+                                type="number"
+                                placeholder="Series"
+                                value={exercise.sets || ""}
+                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, "sets", Number(e.target.value))}
+                                className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+                              />
+                              <input
+                                type="number"
+                                placeholder="Repeticiones"
+                                value={exercise.reps || ""}
+                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, "reps", Number(e.target.value))}
+                                className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+                              />
+                              <input
+                                placeholder="Peso (ej. 10-15kg)"
+                                value={exercise.weight}
+                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, "weight", e.target.value)}
+                                className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+                              />
+                              <input
+                                placeholder="Descanso (ej. 60s)"
+                                value={exercise.rest}
+                                onChange={(e) => handleExerciseChange(dayIndex, exerciseIndex, "rest", e.target.value)}
+                                className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+                              />
+                              <input
+                                placeholder="Consejo 1"
+                                value={exercise.tips[0] || ""}
+                                onChange={(e) => {
+                                  const updatedTips = [...exercise.tips];
+                                  updatedTips[0] = e.target.value;
+                                  handleExerciseChange(dayIndex, exerciseIndex, "tips", updatedTips);
+                                }}
+                                className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+                              />
+                              <input
+                                placeholder="Consejo 2"
+                                value={exercise.tips[1] || ""}
+                                onChange={(e) => {
+                                  const updatedTips = [...exercise.tips];
+                                  updatedTips[1] = e.target.value;
+                                  handleExerciseChange(dayIndex, exerciseIndex, "tips", updatedTips);
+                                }}
+                                className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => deleteExercise(dayIndex, exerciseIndex)}
+                                className="w-full bg-red-600 text-white py-1 rounded hover:bg-red-700 transition-colors text-xs mt-2"
+                              >
+                                Eliminar Ejercicio
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => addExercise(dayIndex)}
+                      className="w-full bg-[#34C759] text-black py-1 rounded hover:bg-[#2DBF4E] transition-colors text-xs shadow-sm mt-2"
+                    >
+                      Agregar Ejercicio
+                    </button>
+                    <input
+                      placeholder="Músculos trabajados (separados por coma)"
+                      value={day.musclesWorked.join(", ")}
+                      onChange={(e) => handleDayChange(dayIndex, "musclesWorked", e.target.value.split(", "))}
+                      className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759] mt-2"
+                    />
+                    <input
+                      placeholder="Calentamientos (separados por coma)"
+                      value={day.warmUpOptions.join(", ")}
+                      onChange={(e) => handleDayChange(dayIndex, "warmUpOptions", e.target.value.split(", "))}
+                      className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+                    />
+                    <textarea
+                      placeholder="Explicación"
+                      value={day.explanation}
+                      onChange={(e) => handleDayChange(dayIndex, "explanation", e.target.value)}
+                      className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs h-12 resize-none placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => deleteDay(dayIndex)}
+                      disabled={formData.days.length <= 1}
+                      className="w-full bg-red-600 text-white py-1 rounded hover:bg-red-700 transition-colors text-xs mt-2 disabled:opacity-50"
+                    >
+                      Eliminar Día
+                    </button>
+                  </div>
+                )}
               </div>
-              <input
-                placeholder="Músculos trabajados (separados por coma)"
-                value={day.musclesWorked.join(", ")}
-                onChange={(e) => handleDayChange(dayIndex, "musclesWorked", e.target.value.split(", "))}
-                className="w-full p-2 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
-              />
-              <input
-                placeholder="Calentamientos (separados por coma)"
-                value={day.warmUpOptions.join(", ")}
-                onChange={(e) => handleDayChange(dayIndex, "warmUpOptions", e.target.value.split(", "))}
-                className="w-full p-2 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
-              />
-              <textarea
-                placeholder="Explicación"
-                value={day.explanation}
-                onChange={(e) => handleDayChange(dayIndex, "explanation", e.target.value)}
-                className="w-full p-2 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs h-16 resize-none placeholder-[#B0B0B0] focus:outline-none focus:ring-1 focus:ring-[#34C759]"
-              />
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addDay}
-            className="w-full bg-[#34C759] text-black py-1 rounded hover:bg-[#2DBF4E] transition-colors text-xs shadow-sm"
-          >
-            Agregar Día
-          </button>
-          <button
-            type="submit"
-            className="w-full bg-[#34C759] text-black py-2 rounded hover:bg-[#2DBF4E] transition-colors text-xs shadow-sm"
-          >
-            {isEditMode ? "Guardar Cambios" : "Guardar Rutina"}
-          </button>
+            );
+          })}
         </form>
+      </div>
+
+      {/* Botón flotante para agregar día */}
+      <div className="fixed bottom-4 right-4 z-10">
+        <button
+          type="button"
+          onClick={addDay}
+          className="bg-[#34C759] text-black p-3 rounded-full shadow-lg hover:bg-[#2DBF4E] transition-colors"
+        >
+          +
+        </button>
+      </div>
+
+      {/* Botón fijo para guardar */}
+      <div className="fixed bottom-4 left-4 z-10">
+        <button
+          onClick={handleSubmit}
+          className="bg-[#34C759] text-black p-3 rounded-full shadow-lg hover:bg-[#2DBF4E] transition-colors"
+        >
+          ✓
+        </button>
       </div>
     </div>
   );
