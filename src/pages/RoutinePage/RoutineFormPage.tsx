@@ -1,8 +1,8 @@
-import React, { useState } from "react";
-import { useDispatch } from "react-redux";
-import { addRoutine } from "../../slices/routine/routineSlice";
-import { useNavigate } from "react-router-dom";
-import { AppDispatch } from "../../slices/store";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { addRoutine, editRoutine } from "../../slices/routine/routineSlice";
+import { useNavigate, useParams } from "react-router-dom";
+import { RootState, AppDispatch } from "../../slices/store";
 
 interface ExerciseForm {
   name: string;
@@ -27,14 +27,44 @@ interface RoutineForm {
   days: DayForm[];
 }
 
-export const AddRoutinePage: React.FC = () => {
+export const RoutineFormPage: React.FC = () => {
+  const { routines } = useSelector((state: RootState) => state.routine);
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { routineIndex } = useParams<{ routineIndex: string }>();
+
+  const isEditMode = !!routineIndex; // Determina si estamos editando o agregando
+  const index = Number(routineIndex);
 
   const [formData, setFormData] = useState<RoutineForm>({
     name: "",
     days: [{ day: "", exercises: [], musclesWorked: [], warmUpOptions: [], explanation: "" }],
   });
+
+  // Cargar datos de la rutina existente si estamos en modo edición
+  useEffect(() => {
+    if (isEditMode && routines[index]) {
+      const routine = routines[index];
+      setFormData({
+        name: routine.name,
+        days: routine.routine.map((day) => ({
+          day: day.day,
+          exercises: day.exercises.map((ex) => ({
+            name: ex.name,
+            muscle_group: ex.muscle_group,
+            sets: ex.sets,
+            reps: ex.reps,
+            weight: ex.weight,
+            rest: ex.rest,
+            tips: ex.tips || ["", ""],
+          })),
+          musclesWorked: day.musclesWorked,
+          warmUpOptions: day.warmUpOptions,
+          explanation: day.explanation || "",
+        })),
+      });
+    }
+  }, [isEditMode, index, routines]);
 
   const handleRoutineChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -100,14 +130,21 @@ export const AddRoutinePage: React.FC = () => {
         explanation: day.explanation,
       })),
     };
-    dispatch(addRoutine(routine));
+
+    if (isEditMode) {
+      dispatch(editRoutine({ routineIndex: index, updatedRoutine: routine }));
+    } else {
+      dispatch(addRoutine(routine));
+    }
     navigate("/routine");
   };
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] text-white flex flex-col">
       <div className="p-4 max-w-md mx-auto flex-1">
-        <h2 className="text-sm font-sans font-semibold text-white mb-4 truncate">Agregar Rutina Manual</h2>
+        <h2 className="text-sm font-sans font-semibold text-white mb-4 truncate">
+          {isEditMode ? "Editar Rutina" : "Agregar Rutina Manual"}
+        </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             name="name"
@@ -226,7 +263,7 @@ export const AddRoutinePage: React.FC = () => {
             type="submit"
             className="w-full bg-[#34C759] text-black py-2 rounded hover:bg-[#2DBF4E] transition-colors text-xs shadow-sm"
           >
-            Guardar Rutina
+            {isEditMode ? "Guardar Cambios" : "Guardar Rutina"}
           </button>
         </form>
       </div>

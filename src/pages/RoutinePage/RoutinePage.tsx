@@ -25,7 +25,7 @@ export const RoutinePage: React.FC = () => {
   const handleAddRoutine = () => navigate("/add-routine");
   const handleEditRoutine = () => {
     if (selectedRoutineIndex !== null) {
-      navigate(`${selectedRoutineIndex}`);
+      navigate(`edit-routine/${selectedRoutineIndex}`);
     }
   };
   const handleDeleteRoutine = () => {

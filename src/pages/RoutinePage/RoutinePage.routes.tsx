@@ -1,7 +1,6 @@
 import { RouteObject } from "react-router-dom";
 import { RoutinePage } from "./RoutinePage";
-import { AddRoutinePage } from "./AddRoutinePage";
-import { EditRoutinePage } from "./EditRoutinePage";
+import { RoutineFormPage } from "./RoutineFormPage";
 
 export const routineRoutes: RouteObject[] = [
   {
@@ -15,12 +14,12 @@ export const routineRoutes: RouteObject[] = [
       },{
         path: "add-routine",
         Component: () => {
-            return <AddRoutinePage />;
+            return <RoutineFormPage />;
         },
       },{
-        path: ":routineIndex",
+        path: "edit-routine/:routineIndex",
         Component: () => {
-            return <EditRoutinePage />;
+            return <RoutineFormPage />;
         }
       }
     ]
