@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-
+import Icon from "../assets/icon.ico";
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
 
@@ -11,7 +11,10 @@ const Navbar: React.FC = () => {
           className="text-sm font-sans font-semibold text-white cursor-pointer truncate"
           onClick={() => navigate("/")}
         >
-          MyVoice
+          <span className="bg-[#1A1A1A] flex items-center left-0 right-0 z-10">
+            <img src={Icon} alt="MyVoice Icon" className="h-8 w-8 mr-2" />
+            <h1 className="text-white text-sm font-semibold">MyVoice</h1>
+          </span>
         </h1>
         <div className="space-x-2">
           <button
