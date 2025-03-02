@@ -31,7 +31,7 @@ export const ProgressPage: React.FC = () => {
     reps: 0,
     weight: "",
     notes: "",
-    date: new Date().toISOString().split("T")[0], // Fecha actual por defecto
+    date: new Date().toISOString().split("T")[0],
   });
   const itemsPerPage = 5;
 
@@ -59,7 +59,6 @@ export const ProgressPage: React.FC = () => {
 
   const handleSaveEdit = (cardKey: string, entry: any) => {
     const updatedEntry = { ...entry, ...editData[cardKey] };
-    // Asegurarse de que la fecha esté en formato ISO completo
     if (updatedEntry.date && !updatedEntry.date.includes("T")) {
       updatedEntry.date = `${updatedEntry.date}T00:00:00Z`;
     }
@@ -84,7 +83,7 @@ export const ProgressPage: React.FC = () => {
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const fullDate = `${newProgress.date}T00:00:00Z`; // Convertir a formato ISO
+    const fullDate = `${newProgress.date}T00:00:00Z`;
     dispatch(addProgress({ ...newProgress, date: fullDate }));
     setToastMessage("Progreso agregado correctamente");
     setShowAddForm(false);
@@ -100,7 +99,6 @@ export const ProgressPage: React.FC = () => {
     });
   };
 
-  // Filtrar progreso por búsqueda
   const filteredProgress = progress.filter((entry) => {
     const routine = routines[entry.routineIndex];
     const day = routine?.routine[entry.dayIndex];
@@ -243,7 +241,7 @@ export const ProgressPage: React.FC = () => {
                               <label className="text-[#B0B0B0]">Fecha:</label>
                               <input
                                 type="date"
-                                value={currentEntry.date.split("T")[0]} // Mostrar solo la parte de la fecha
+                                value={currentEntry.date.split("T")[0]}
                                 onChange={(e) => handleEditChange(cardKey, "date", e.target.value)}
                                 className="w-full p-1 border border-[#4A4A4A] rounded bg-[#1A1A1A] text-white text-xs focus:outline-none focus:ring-1 focus:ring-[#34C759]"
                               />

@@ -3,7 +3,7 @@ export const defaultResponse = [
     "name":"ChatGpt",
     "routine": [
       {
-        "day": "🔥 PECHO Y BÍCEPS – FUERZA Y VOLUMEN 🔥",
+        "day": "PECHO Y BÍCEPS – FUERZA Y VOLUMEN",
         "exercises": [
           {
             "name": "Press Inclinado con Barra",

@@ -5,7 +5,7 @@ import { updateExercise, setExerciseVideo, selectRoutine, deleteRoutine } from "
 import { addProgress } from "../../slices/progress/progressSlice";
 import { useNavigate } from "react-router-dom";
 import Loader from "../../components/Loader";
-import Toast from "../../components/Toast"; // Importa el componente Toast
+import Toast from "../../components/Toast";
 
 export const RoutinePage: React.FC = () => {
   const { routines, selectedRoutineIndex } = useSelector((state: RootState) => state.routine);
@@ -16,13 +16,13 @@ export const RoutinePage: React.FC = () => {
   const [expandedExercises, setExpandedExercises] = useState<Record<number, boolean>>({});
   const [editData, setEditData] = useState<Record<string, any>>({});
   const [loadingVideos, setLoadingVideos] = useState<Record<number, boolean>>({});
-  const [toastMessage, setToastMessage] = useState<string | null>(null); // Estado para la notificación
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || "TU_CLAVE_API_YOUTUBE";
 
   const handleBack = () => navigate("/");
   const handleProgress = () => navigate("/progress");
-  const handleAddRoutine = () => navigate("/add-routine");
+  const handleAddRoutine = () => navigate("add-routine");
   const handleEditRoutine = () => {
     if (selectedRoutineIndex !== null) {
       navigate(`edit-routine/${selectedRoutineIndex}`);
@@ -103,7 +103,7 @@ export const RoutinePage: React.FC = () => {
           date: new Date().toISOString(),
         };
         dispatch(addProgress(progressData));
-        setToastMessage("Progreso guardado correctamente"); // Mostrar notificación
+        setToastMessage("Progreso guardado correctamente");
         setEditData((prev) => {
           const newData = { ...prev };
           delete newData[key];

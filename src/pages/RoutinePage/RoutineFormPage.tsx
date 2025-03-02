@@ -99,16 +99,16 @@ export const RoutineFormPage: React.FC = () => {
   };
 
   const deleteDay = (dayIndex: number) => {
-    if (formData.days.length <= 1) return; // No eliminar si solo queda un día
+    if (formData.days.length <= 1) return;
     const updatedDays = formData.days.filter((_, idx) => idx !== dayIndex);
     setFormData({ ...formData, days: updatedDays });
-    setExpandedDay((prev) => (prev === dayIndex ? null : prev > dayIndex ? prev - 1 : prev));
+    setExpandedDay((prev) => (prev === dayIndex ? null : prev && prev > dayIndex ? prev - 1 : prev));
     setExpandedExercises((prev) => {
       const newExpanded = { ...prev };
       delete newExpanded[dayIndex];
-      return Object.keys(newExpanded).reduce((acc, key) => {
+      return Object.keys(newExpanded).reduce((acc: Record<number, number[]>, key) => {
         const newKey = Number(key) > dayIndex ? Number(key) - 1 : Number(key);
-        acc[newKey] = newExpanded[key];
+        acc[newKey] = newExpanded[Number(key)];
         return acc;
       }, {} as Record<number, number[]>);
     });
