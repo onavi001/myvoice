@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { UserState } from './userTypes';
-import { Routine } from '../exercise/exerciseTypes';
 
 // Estado inicial
 const initialState: UserState = {
@@ -23,10 +22,7 @@ const userSlice = createSlice({
     },
     addUserPreference: (state, action: PayloadAction<string>) => {
       state.preferences.push(action.payload);
-    },
-    assignRoutine: (state, action: PayloadAction<Routine>) => {
-      state.assignedRoutine = action.payload;
-    },
+    }
   },
 });
 

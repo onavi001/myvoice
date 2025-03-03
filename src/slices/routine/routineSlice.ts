@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { defaultResponse } from "./const";
 
 interface RoutineExercise {
   name: string;
@@ -12,9 +11,10 @@ interface RoutineExercise {
   videoUrls?: string[];
   currentVideoIndex?: number;
   tips?: string[];
+  completed?: boolean; // Nuevo campo para estado "terminado"
 }
 
-interface RoutineDay {
+export interface RoutineDay {
   day: string;
   exercises: RoutineExercise[];
   musclesWorked: string[];
@@ -22,7 +22,7 @@ interface RoutineDay {
   explanation?: string;
 }
 
-interface Routine {
+export interface Routine {
   id?: number;
   name: string;
   routine: RoutineDay[];
@@ -59,14 +59,9 @@ export const fetchRoutine = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      if (formData.notes === "navi") {
-        return defaultResponse[0] as unknown as Routine;
-      }
       const response = await fetch("/.netlify/functions/generateRoutine", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
@@ -180,6 +175,21 @@ const routineSlice = createSlice({
         localStorage.setItem("routines", JSON.stringify(state.routines));
       }
     },
+    toggleExerciseCompleted(
+      state,
+      action: PayloadAction<{
+        routineIndex: number;
+        dayIndex: number;
+        exerciseIndex: number;
+      }>
+    ) {
+      const { routineIndex, dayIndex, exerciseIndex } = action.payload;
+      const exercise = state.routines[routineIndex]?.routine[dayIndex]?.exercises[exerciseIndex];
+      if (exercise) {
+        exercise.completed = !exercise.completed;
+        localStorage.setItem("routines", JSON.stringify(state.routines));
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -210,6 +220,7 @@ export const {
   updateExercise,
   setExerciseVideo,
   changeExerciseVideoIndex,
+  toggleExerciseCompleted,
 } = routineSlice.actions;
 
 export default routineSlice.reducer;

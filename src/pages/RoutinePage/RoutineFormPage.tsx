@@ -210,7 +210,7 @@ export const RoutineFormPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => toggleDay(dayIndex)}
-                  className="w-full flex justify-between items-center p-2 text-left hover:bg-[#4A4A4A] transition-colors"
+                  className="w-full flex justify-between items-center p-2 text-left rounded-lg bg-[#4A4A4A] transition-colors"
                 >
                   <span className="text-xs font-semibold text-white truncate">
                     {day.day || `Día ${dayIndex + 1}`}
@@ -235,7 +235,7 @@ export const RoutineFormPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => toggleExercise(dayIndex, exerciseIndex)}
-                            className="w-full flex justify-between items-center p-2 text-left hover:bg-[#6A6A6A] transition-colors"
+                            className="w-full flex justify-between items-center p-2 text-left rounded-lg bg-[#6A6A6A] transition-colors"
                           >
                             <span className="text-xs font-semibold text-white truncate">
                               {exercise.name || `Ejercicio ${exerciseIndex + 1}`}

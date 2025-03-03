@@ -7,6 +7,9 @@ import {
   selectRoutine,
   deleteRoutine,
   changeExerciseVideoIndex,
+  toggleExerciseCompleted,
+  Routine,
+  RoutineDay,
 } from "../../slices/routine/routineSlice";
 import { addProgress } from "../../slices/progress/progressSlice";
 import { useNavigate } from "react-router-dom";
@@ -46,7 +49,7 @@ export const RoutinePage: React.FC = () => {
       const response = await fetch(
         `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(
           `${exerciseName} exercise technique muscles`
-        )}&type=video&maxResults=5&key=${YOUTUBE_API_KEY}` // Obtener 5 videos
+        )}&type=video&maxResults=5&key=${YOUTUBE_API_KEY}`
       );
       const data = await response.json();
       if (data.items && data.items.length > 0) {
@@ -122,8 +125,27 @@ export const RoutinePage: React.FC = () => {
     dispatch(changeExerciseVideoIndex({ routineIndex, dayIndex, exerciseIndex, direction }));
   };
 
+  const handleToggleCompleted = (routineIndex: number, dayIndex: number, exerciseIndex: number) => {
+    dispatch(toggleExerciseCompleted({ routineIndex, dayIndex, exerciseIndex }));
+  };
+
   const handleCloseToast = () => {
     setToastMessage(null);
+  };
+
+  const calculateDayProgress = (day: RoutineDay) => {
+    const totalExercises = day.exercises.length;
+    const completedExercises = day.exercises.filter((ex) => ex.completed).length;
+    return totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0;
+  };
+
+  const calculateWeekProgress = (routine: Routine) => {
+    const totalExercises = routine.routine.reduce((sum, day) => sum + day.exercises.length, 0);
+    const completedExercises = routine.routine.reduce(
+      (sum, day) => sum + day.exercises.filter((ex) => ex.completed).length,
+      0
+    );
+    return totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0;
   };
 
   if (routines.length === 0) {
@@ -174,6 +196,8 @@ export const RoutinePage: React.FC = () => {
 
   const selectedRoutine = routines[selectedRoutineIndex];
   const selectedDay = selectedRoutine.routine[selectedDayIndex];
+  const dayProgress = calculateDayProgress(selectedDay);
+  const weekProgress = calculateWeekProgress(selectedRoutine);
 
   return (
     <div className="min-h-screen bg-[#1A1A1A] text-white flex flex-col">
@@ -189,7 +213,6 @@ export const RoutinePage: React.FC = () => {
         `}
       </style>
       <div className="p-4 max-w-full mx-auto flex-1">
-        {/* Selector de rutinas */}
         <div className="flex overflow-x-auto space-x-2 mb-4 scrollbar-hidden">
           {routines.map((routine, index) => (
             <button
@@ -209,8 +232,16 @@ export const RoutinePage: React.FC = () => {
             </button>
           ))}
         </div>
-
-        {/* Tabs de días con scroll interno */}
+        {/* Barra de progreso semanal */}
+        <div className="mb-4">
+          <div className="text-[#B0B0B0] text-xs mb-1">Progreso Semanal: {Math.round(weekProgress)}%</div>
+          <div className="w-full bg-[#4A4A4A] rounded-full h-2.5">
+            <div
+              className="bg-[#34C759] h-2.5 rounded-full"
+              style={{ width: `${weekProgress}%` }}
+            ></div>
+          </div>
+        </div>
         <div className="flex overflow-x-auto space-x-2 mb-4 scrollbar-hidden">
           {selectedRoutine.routine.map((day, index) => (
             <button
@@ -226,8 +257,16 @@ export const RoutinePage: React.FC = () => {
             </button>
           ))}
         </div>
-
-        {/* Detalles del día */}
+        {/* Barra de progreso diaria */}
+        <div className="mb-4">
+          <div className="text-[#B0B0B0] text-xs mb-1">Progreso Día: {Math.round(dayProgress)}%</div>
+          <div className="w-full bg-[#4A4A4A] rounded-full h-2.5">
+            <div
+              className="bg-[#34C759] h-2.5 rounded-full"
+              style={{ width: `${dayProgress}%` }}
+            ></div>
+          </div>
+        </div>
         <div className="bg-[#2D2D2D] p-2 rounded-lg shadow-sm mb-4 max-h-24 overflow-y-auto scrollbar-hidden">
           <div className="flex flex-col space-y-1">
             <div className="flex items-center">
@@ -240,8 +279,6 @@ export const RoutinePage: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Lista de ejercicios */}
         <ul className="space-y-2">
           {selectedDay.exercises.map((exercise, exerciseIndex) => {
             const key = `${selectedDayIndex}-${exerciseIndex}`;
@@ -251,17 +288,12 @@ export const RoutinePage: React.FC = () => {
             const isLoading = loadingVideos[exerciseIndex] || false;
 
             return (
-              <li
-                key={exerciseIndex}
-                className="bg-[#2D2D2D] rounded-lg shadow-sm overflow-hidden"
-              >
+              <li key={exerciseIndex} className="bg-[#2D2D2D] rounded-lg shadow-sm overflow-hidden">
                 <button
                   onClick={() => toggleExerciseExpand(exerciseIndex, exercise.name)}
                   className="w-full flex justify-between items-center p-2 text-left hover:bg-[#4A4A4A] transition-colors"
                 >
-                  <span className="text-sm font-sans font-semibold text-white truncate">
-                    {exercise.name}
-                  </span>
+                  <span className="text-sm font-sans font-semibold text-white truncate">{exercise.name}</span>
                   <span className="text-[#B0B0B0] text-xs">{isExpanded ? "▲" : "▼"}</span>
                 </button>
                 {isExpanded && (
@@ -362,12 +394,23 @@ export const RoutinePage: React.FC = () => {
                         />
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleSave(selectedDayIndex, exerciseIndex)}
-                      className="w-full bg-[#34C759] text-black py-1 rounded hover:bg-[#2DBF4E] transition-colors text-xs shadow-sm"
-                    >
-                      Guardar
-                    </button>
+                    <div className="flex items-center space-x-2">
+                      <label className="text-[#B0B0B0] flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={currentExercise.completed || false}
+                          onChange={() => handleToggleCompleted(selectedRoutineIndex, selectedDayIndex, exerciseIndex)}
+                          className="mr-1"
+                        />
+                        Terminado
+                      </label>
+                      <button
+                        onClick={() => handleSave(selectedDayIndex, exerciseIndex)}
+                        className="w-full bg-[#34C759] text-black py-1 rounded hover:bg-[#2DBF4E] transition-colors text-xs shadow-sm"
+                      >
+                        Guardar
+                      </button>
+                    </div>
                   </div>
                 )}
               </li>
@@ -381,7 +424,6 @@ export const RoutinePage: React.FC = () => {
         )}
       </div>
 
-      {/* Barra fija inferior */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#1A1A1A] p-1 shadow-sm border-t border-[#4A4A4A]">
         <div className="max-w-md mx-auto flex space-x-2">
           <button
@@ -413,7 +455,6 @@ export const RoutinePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Notificación Toast */}
       {toastMessage && <Toast message={toastMessage} onClose={handleCloseToast} />}
     </div>
   );
